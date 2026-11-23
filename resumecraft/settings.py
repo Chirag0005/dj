@@ -27,13 +27,24 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't', 'yes')
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('ALLOWED_HOSTS', '*').split(',')
-    if host.strip()
-]
-if 'testserver' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('testserver')
+# Allowed Hosts configuration
+# In production, Render assigns dynamic hostnames (e.g. *.onrender.com).
+# We allow wildcard '*', '.onrender.com', local dev hosts, and dynamic Render hostnames.
+ALLOWED_HOSTS = ['*', '.onrender.com', 'localhost', '127.0.0.1', 'testserver']
+
+render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if render_hostname and render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_hostname)
+
+custom_hosts = os.getenv('ALLOWED_HOSTS', '')
+if custom_hosts:
+    for host in custom_hosts.split(','):
+        h = host.strip()
+        if h and h not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(h)
+
+# Reverse proxy SSL header for Render / cloud deployments
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 # Deliberately omitting all database-dependent apps:
@@ -100,15 +111,22 @@ STORAGES = {
     },
 }
 
-# CSRF configuration
+# CSRF configuration for local and Render production
 CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv(
-        'CSRF_TRUSTED_ORIGINS',
-        'https://*.onrender.com,http://localhost:8000,http://127.0.0.1:8000'
-    ).split(',')
-    if origin.strip()
+    'https://*.onrender.com',
+    'https://*.render.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
+if render_hostname:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{render_hostname}')
+
+custom_csrf = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if custom_csrf:
+    for origin in custom_csrf.split(','):
+        o = origin.strip()
+        if o and o not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(o)
 
 # Security Settings for Production
 if not DEBUG:
