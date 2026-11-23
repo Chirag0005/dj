@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="editor-container">
+    <div class="container-fluid px-lg-4">
+
+        <!-- Mobile Tab Switcher (Visible on <992px) -->
+        <div class="d-lg-none mb-3 mobile-tab-switch">
+            <div class="btn-group w-100 shadow-sm" role="group">
+                <button type="button" id="tabBtnEditor" class="btn btn-outline-primary active py-2 fw-semibold">
+                    <i class="bi bi-pencil-square"></i> Edit Details
+                </button>
+                <button type="button" id="tabBtnPreview" class="btn btn-outline-primary py-2 fw-semibold">
+                    <i class="bi bi-eye"></i> Live A4 Preview
+                </button>
+            </div>
+        </div>
+
+        <!-- Editor Toolbar (Sticky) -->
+        <div class="editor-toolbar">
+            <!-- Left: Title & Status -->
+            <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 320px;">
+                <input type="text" id="resumeTitleInput" class="form-control form-control-sm fw-bold border-0 bg-light" value="Untitled Resume" placeholder="Resume Title...">
+                <span id="autosaveStatus" class="save-status-pill saved text-nowrap">
+                    <i class="bi bi-check2-circle"></i> Saved
+                </span>
+            </div>
+
+            <!-- Middle: Quick Style Controls -->
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <!-- Template Picker -->
+                <div class="d-flex align-items-center gap-1">
+                    <label class="small text-muted text-nowrap mb-0"><i class="bi bi-grid"></i> Template:</label>
+                    <select id="selectTemplate" class="form-select form-select-sm" style="width: 175px;">
+                        <option value="classic">Professional Classic</option>
+                        <option value="modern">Modern Minimal</option>
+                        <option value="developer">Developer Portfolio</option>
+                        <option value="fresher">Student Fresher</option>
+                    </select>
+                </div>
+
+                <!-- Font Picker -->
+                <div class="d-flex align-items-center gap-1">
+                    <label class="small text-muted text-nowrap mb-0"><i class="bi bi-fonts"></i> Font:</label>
+                    <select id="selectFontFamily" class="form-select form-select-sm" style="width: 130px;">
+                        <option value="Inter">Inter (Sans)</option>
+                        <option value="Poppins">Poppins</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Merriweather">Merriweather</option>
+                        <option value="JetBrains Mono">JetBrains Mono</option>
+                    </select>
+                </div>
+
+                <!-- Accent Color Swatches -->
+                <div class="d-flex align-items-center gap-1">
+                    <label class="small text-muted text-nowrap mb-0"><i class="bi bi-palette"></i> Color:</label>
+                    <div class="color-swatch-group">
+                        <div class="color-swatch active" style="background:#6257E8;" data-color="#6257E8" title="Royal Purple"></div>
+                        <div class="color-swatch" style="background:#0284C7;" data-color="#0284C7" title="Ocean Blue"></div>
+                        <div class="color-swatch" style="background:#059669;" data-color="#059669" title="Emerald"></div>
+                        <div class="color-swatch" style="background:#DC2626;" data-color="#DC2626" title="Crimson"></div>
+                        <div class="color-swatch" style="background:#1E293B;" data-color="#1E293B" title="Slate"></div>
+                        <input type="color" id="customColorPicker" value="#6257E8" class="form-control form-control-color p-0 border-0" style="width:24px;height:24px;cursor:pointer;" title="Choose Custom Color">
+                    </div>
+                </div>
+
+                <!-- Spacing & Size Dropdowns -->
+                <div class="d-flex align-items-center gap-1">
+                    <select id="selectFontSize" class="form-select form-select-sm" style="width: 95px;" title="Font Size">
+                        <option value="small">Small</option>
+                        <option value="normal" selected>Regular</option>
+                        <option value="large">Large</option>
+                    </select>
+                    <select id="selectSpacing" class="form-select form-select-sm" style="width: 105px;" title="Section Spacing">
+                        <option value="compact">Compact</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="spacious">Spacious</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="d-flex align-items-center gap-2">
+                <span id="completionBadge" class="badge bg-primary">0% Complete</span>
+                <button type="button" id="btnOpenAiAssistant" class="btn btn-sm btn-outline-primary" style="background:var(--primary-light); border-color:rgba(98,87,232,0.3);">
+                    <i class="bi bi-stars"></i> AI Copilot
+                </button>
+                <button type="button" class="btn btn-sm btn-primary-custom" onclick="downloadPdf()">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Two Column Layout: Editor (Left) & Preview (Right) -->
+        <div class="row g-4">
+
+            <!-- LEFT COLUMN: INPUT FORMS -->
+            <div id="editorColumn" class="col-lg-6 editor-forms-col">
+                <div id="editorFormContainer">
+
+                    <!-- SECTION 1: PERSONAL INFORMATION -->
+                    <div class="form-section-card">
+                        <div class="form-section-header active" data-bs-toggle="collapse" data-bs-target="#collapsePersonal">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-person"></i></span>
+                                <h6 class="fw-bold mb-0">Personal Information</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapsePersonal" class="collapse show form-section-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Full Name *</label>
+                                    <input type="text" id="inputFullName" class="form-control" placeholder="e.g. Aarav Sharma">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Professional Title *</label>
+                                    <input type="text" id="inputTitle" class="form-control" placeholder="e.g. Full Stack Developer / SDE">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email *</label>
+                                    <input type="email" id="inputEmail" class="form-control" placeholder="aarav.sharma@example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone Number *</label>
+                                    <input type="tel" id="inputPhone" class="form-control" placeholder="+91 98765 43210">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">City & Country</label>
+                                    <input type="text" id="inputLocation" class="form-control" placeholder="Bengaluru, India">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">LinkedIn Profile URL</label>
+                                    <input type="url" id="inputLinkedin" class="form-control" placeholder="https://linkedin.com/in/username">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">GitHub Profile URL</label>
+                                    <input type="url" id="inputGithub" class="form-control" placeholder="https://github.com/username">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Portfolio / Website</label>
+                                    <input type="url" id="inputPortfolio" class="form-control" placeholder="https://yourportfolio.dev">
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label mb-0">Professional Summary</label>
+                                        <button type="button" id="btnFormAiSummary" class="btn-ai-inline">
+                                            <i class="bi bi-stars"></i> ✨ AI Generate Summary
+                                        </button>
+                                    </div>
+                                    <textarea id="inputSummary" class="form-control" rows="3" placeholder="3-4 sentences summarizing your strengths, core technical stack, and career focus..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: EDUCATION -->
+                    <div class="form-section-card">
+                        <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapseEducation">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-mortarboard"></i></span>
+                                <h6 class="fw-bold mb-0">Education</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapseEducation" class="collapse show form-section-body">
+                            <div id="educationRepeaterList">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-custom w-100 mt-2" onclick="addEducation()">
+                                <i class="bi bi-plus-circle"></i> Add Education Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: EXPERIENCE -->
+                    <div class="form-section-card">
+                        <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapseExperience">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-briefcase"></i></span>
+                                <h6 class="fw-bold mb-0">Work & Internship Experience</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapseExperience" class="collapse show form-section-body">
+                            <div id="experienceRepeaterList">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-custom w-100 mt-2" onclick="addExperience()">
+                                <i class="bi bi-plus-circle"></i> Add Experience Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: PROJECTS -->
+                    <div class="form-section-card">
+                        <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapseProjects">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-folder"></i></span>
+                                <h6 class="fw-bold mb-0">Projects</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapseProjects" class="collapse show form-section-body">
+                            <div id="projectsRepeaterList">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-custom w-100 mt-2" onclick="addProject()">
+                                <i class="bi bi-plus-circle"></i> Add Project Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: SKILLS -->
+                    <div class="form-section-card">
+                        <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapseSkills">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-tools"></i></span>
+                                <h6 class="fw-bold mb-0">Skills & Competencies</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapseSkills" class="collapse show form-section-body">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button" id="btnFormAiSkills" class="btn-ai-inline">
+                                    <i class="bi bi-stars"></i> ✨ AI Suggest In-Demand Skills
+                                </button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Programming Languages</label>
+                                    <input type="text" id="inputSkillsLanguages" class="form-control" placeholder="Python, JavaScript (ES6+), C++, SQL, Java">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Frameworks & Libraries</label>
+                                    <input type="text" id="inputSkillsFrameworks" class="form-control" placeholder="Django, React, REST Framework, Bootstrap 5">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Developer Tools & Platforms</label>
+                                    <input type="text" id="inputSkillsTools" class="form-control" placeholder="Git, GitHub, Docker, Postman, Linux, Render">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Core Technical Concepts</label>
+                                    <input type="text" id="inputSkillsTechnical" class="form-control" placeholder="Data Structures & Algorithms, RESTful APIs, System Design, OOP">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Soft Skills</label>
+                                    <input type="text" id="inputSkillsSoft" class="form-control" placeholder="Problem Solving, Agile Collaboration, Technical Communication">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 6: CERTIFICATIONS -->
+                    <div class="form-section-card">
+                        <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapseCertifications">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-patch-check"></i></span>
+                                <h6 class="fw-bold mb-0">Certifications</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapseCertifications" class="collapse show form-section-body">
+                            <div id="certificationsRepeaterList">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-custom w-100 mt-2" onclick="addCertification()">
+                                <i class="bi bi-plus-circle"></i> Add Certification
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 7: ACHIEVEMENTS -->
+                    <div class="form-section-card">
+                        <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapseAchievements">
+                            <div class="d-flex align-items-center">
+                                <span class="section-icon-pill"><i class="bi bi-trophy"></i></span>
+                                <h6 class="fw-bold mb-0">Honors & Achievements</h6>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                        <div id="collapseAchievements" class="collapse show form-section-body">
+                            <div id="achievementsRepeaterList">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-custom w-100 mt-2" onclick="addAchievement()">
+                                <i class="bi bi-plus-circle"></i> Add Achievement
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: LIVE RESUME PREVIEW (A4 SHEET) -->
+            <div id="previewColumn" class="col-lg-6 d-none d-lg-block">
+                <div class="preview-sticky-wrapper">
+                    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                        <div class="small text-muted fw-semibold">
+                            <i class="bi bi-eye-fill text-primary"></i> Live A4 Preview (Real-time Sync)
+                        </div>
+                        <div class="small text-muted clean-print-tip">
+                            <i class="bi bi-info-circle text-primary"></i> Clean PDF tip: uncheck <em>Headers &amp; footers</em> in print settings
+                        </div>
+                    </div>
+
+                    <div class="preview-sheet-container">
+                        <!-- Dynamic A4 Sheet -->
+                        <div id="resumeSheet" class="resume-sheet template-classic fs-normal spacing-normal">
+                            <!-- Rendered by renderLivePreview() in editor.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ==============================================================================
+     GEMINI AI ASSISTANT MODAL (ALL 8 CAPABILITIES)
+     ============================================================================== -->
+<div class="modal fade" id="aiAssistantModal" tabindex="-1" aria-labelledby="aiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="brand-icon" style="width:32px;height:32px;font-size:1rem;">
+                        <i class="bi bi-stars"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="aiModalLabel">Gemini AI Career Copilot</h5>
+                        <small class="text-muted">Powered by Google Gemini 2.5 Flash SDK</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <!-- Navigation Tabs for AI Features -->
+                <div class="d-flex gap-2 flex-wrap mb-4 pb-2 border-bottom">
+                    <button type="button" class="ai-tab-btn active" data-tab="summary" onclick="openAiTab('summary')">
+                        <i class="bi bi-card-text"></i> Summary
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="experience" onclick="openAiTab('experience')">
+                        <i class="bi bi-lightning-charge"></i> Experience
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="projects" onclick="openAiTab('projects')">
+                        <i class="bi bi-code-square"></i> Projects
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="skills" onclick="openAiTab('skills')">
+                        <i class="bi bi-cpu"></i> Skill Suggestions
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="ats" onclick="openAiTab('ats')">
+                        <i class="bi bi-speedometer2"></i> ATS Scanner
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="match" onclick="openAiTab('match')">
+                        <i class="bi bi-file-earmark-check"></i> Job Match
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="objective" onclick="openAiTab('objective')">
+                        <i class="bi bi-compass"></i> Objective
+                    </button>
+                    <button type="button" class="ai-tab-btn" data-tab="review" onclick="openAiTab('review')">
+                        <i class="bi bi-search"></i> Resume Audit
+                    </button>
+                </div>
+
+                <!-- TAB 1: SUMMARY GENERATOR -->
+                <div id="aiTab_summary" class="ai-tab-pane">
+                    <h6 class="fw-bold mb-1">Generate High-Impact Professional Summary</h6>
+                    <p class="small text-muted mb-3">Synthesizes your factual education, technical skills, and career focus into an authoritative executive summary.</p>
+                    <button type="button" id="btnRunAiSummary" class="btn btn-primary-custom mb-3" onclick="triggerSummaryGeneration()">
+                        <i class="bi bi-stars"></i> Generate with Gemini
+                    </button>
+                    <div id="aiSummaryResult"></div>
+                </div>
+
+                <!-- TAB 2: EXPERIENCE IMPROVER -->
+                <div id="aiTab_experience" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">AI Experience Improver (Google XYZ Framework)</h6>
+                    <p class="small text-muted mb-3">Rewrites basic duties into active, outcome-focused resume bullet points without fabricating numbers or tools.</p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Job Title / Role</label>
+                            <input type="text" id="aiExpTitle" class="form-control form-control-sm" placeholder="Frontend Intern">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Company</label>
+                            <input type="text" id="aiExpCompany" class="form-control form-control-sm" placeholder="Tech Startup">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small">Raw Description to Improve</label>
+                            <textarea id="aiExpDesc" class="form-control form-control-sm" rows="3" placeholder="Worked on frontend using React. Fixed bugs and helped with UI components."></textarea>
+                        </div>
+                    </div>
+                    <button type="button" id="btnRunAiExperience" class="btn btn-primary-custom mb-3" onclick="triggerExperienceImprovement()">
+                        <i class="bi bi-stars"></i> Enhance Experience Bullets
+                    </button>
+                    <div id="aiExperienceResult"></div>
+                </div>
+
+                <!-- TAB 3: PROJECT DESCRIPTION -->
+                <div id="aiTab_projects" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">AI Project Bullet Point Generator</h6>
+                    <p class="small text-muted mb-3">Generates technical, architecture-focused bullet points demonstrating software engineering best practices.</p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Project Name</label>
+                            <input type="text" id="aiProjName" class="form-control form-control-sm" placeholder="ResumeCraft AI">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Technologies Used</label>
+                            <input type="text" id="aiProjTech" class="form-control form-control-sm" placeholder="Django, Gemini API, JS, Bootstrap">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small">Core Functionality</label>
+                            <textarea id="aiProjFunc" class="form-control form-control-sm" rows="3" placeholder="A web app allowing students to build ATS resumes with client storage and Gemini AI."></textarea>
+                        </div>
+                    </div>
+                    <button type="button" id="btnRunAiProject" class="btn btn-primary-custom mb-3" onclick="triggerProjectEnhancement()">
+                        <i class="bi bi-stars"></i> Generate Project Bullets
+                    </button>
+                    <div id="aiProjectResult"></div>
+                </div>
+
+                <!-- TAB 4: SKILLS SUGGESTIONS -->
+                <div id="aiTab_skills" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">AI In-Demand Skill Recommendations</h6>
+                    <p class="small text-muted mb-3">Analyzes your career role to recommend modern technical skills and tools to expand your resume.</p>
+                    <button type="button" id="btnRunAiSkills" class="btn btn-primary-custom mb-3" onclick="triggerSkillsSuggestion()">
+                        <i class="bi bi-stars"></i> Analyze & Suggest Skills
+                    </button>
+                    <div id="aiSkillsResult"></div>
+                </div>
+
+                <!-- TAB 5: ATS RESUME ANALYZER -->
+                <div id="aiTab_ats" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">Simulated ATS Scanner & Keyword Indexer</h6>
+                    <p class="small text-muted mb-3">Paste a target job posting below to evaluate compatibility, identify keyword gaps, and check formatting.</p>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small mb-0 fw-semibold">Target Job Description or Role:</label>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="text-muted small me-1" style="font-size:0.75rem;">Quick JDs:</span>
+                                <button type="button" class="btn btn-xs btn-outline-custom py-0 px-2" style="font-size:0.75rem;" onclick="loadSampleJd('backend')">Backend</button>
+                                <button type="button" class="btn btn-xs btn-outline-custom py-0 px-2" style="font-size:0.75rem;" onclick="loadSampleJd('fullstack')">Full Stack</button>
+                                <button type="button" class="btn btn-xs btn-outline-custom py-0 px-2" style="font-size:0.75rem;" onclick="loadSampleJd('frontend')">Frontend</button>
+                            </div>
+                        </div>
+                        <textarea id="aiAtsJobDescription" class="form-control form-control-sm" rows="4" placeholder="Paste full job requirements OR enter a target role (e.g. 'Backend Developer', 'Full Stack Developer', 'Python Engineer')..."></textarea>
+                        <div class="form-text text-muted" style="font-size:0.75rem;">
+                            <i class="bi bi-info-circle text-primary"></i> You can paste a full job posting OR simply type your target position (e.g. <code>backend developer</code>).
+                        </div>
+                    </div>
+                    <button type="button" id="btnRunAiAts" class="btn btn-primary-custom mb-3" onclick="triggerAtsAnalysis()">
+                        <i class="bi bi-speedometer2"></i> Run ATS Compatibility Scan
+                    </button>
+                    <div id="aiAtsResult"></div>
+                </div>
+
+                <!-- TAB 6: JOB DESCRIPTION MATCHER -->
+                <div id="aiTab_match" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">AI Job Alignment & Project Tailoring</h6>
+                    <p class="small text-muted mb-3">Identifies exact qualification alignment and suggests which projects to highlight for the hiring manager.</p>
+                    <div class="mb-3">
+                        <label class="form-label small">Target Job Description:</label>
+                        <textarea id="aiMatchJobDescription" class="form-control form-control-sm" rows="4" placeholder="Paste target role description..."></textarea>
+                    </div>
+                    <button type="button" id="btnRunAiMatch" class="btn btn-primary-custom mb-3" onclick="triggerJobMatch()">
+                        <i class="bi bi-file-earmark-check"></i> Match Resume with Job
+                    </button>
+                    <div id="aiMatchResult"></div>
+                </div>
+
+                <!-- TAB 7: CAREER OBJECTIVE -->
+                <div id="aiTab_objective" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">Tailored Career Objective Generator</h6>
+                    <p class="small text-muted mb-3">Generates crisp, authentic objective statements without empty buzzwords.</p>
+                    <div class="mb-3">
+                        <label class="form-label small">Candidate Experience Level:</label>
+                        <select id="aiObjectiveLevel" class="form-select form-select-sm" style="max-width:240px;">
+                            <option value="Fresher" selected>College Fresher / Graduate</option>
+                            <option value="Student">Current Student / Intern</option>
+                            <option value="Experienced">Experienced Professional</option>
+                        </select>
+                    </div>
+                    <button type="button" id="btnRunAiObjective" class="btn btn-primary-custom mb-3" onclick="triggerObjectiveGeneration()">
+                        <i class="bi bi-compass"></i> Generate Objectives
+                    </button>
+                    <div id="aiObjectiveResult"></div>
+                </div>
+
+                <!-- TAB 8: RESUME REVIEW -->
+                <div id="aiTab_review" class="ai-tab-pane d-none">
+                    <h6 class="fw-bold mb-1">Full Resume Diagnostic Audit</h6>
+                    <p class="small text-muted mb-3">Gemini evaluates overall grammar, tone, section balance, and immediate quick-win enhancements.</p>
+                    <button type="button" id="btnRunAiReview" class="btn btn-primary-custom mb-3" onclick="triggerResumeReview()">
+                        <i class="bi bi-search"></i> Run Complete Resume Audit
+                    </button>
+                    <div id="aiReviewResult"></div>
+                </div>
+
+            </div>
+            <div class="modal-footer border-top py-2">
+                <small class="text-muted me-auto">
+                    <i class="bi bi-shield-check text-success"></i> Real-time Gemini 2.5 SDK • No database records created
+                </small>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Resume Editor & Gemini Controller -->
+<script src="{% static 'js/editor.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center max-w-700 mx-auto mb-5">
+        <span class="badge bg-primary-light text-primary mb-2 px-3 py-2 fw-semibold">
+            <i class="bi bi-grid-fill"></i> Placement & Industry Ready
+        </span>
+        <h1 class="fw-bold mb-3">ATS-Optimized Resume Templates</h1>
+        <p class="text-muted">
+            Engineered with strict ATS typography, proportional margins, and recruiter-approved hierarchy. Switch templates anytime without losing data.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Template 1: Classic -->
+        <div class="col-lg-6 mb-4">
+            <div class="custom-card h-100 p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Professional Classic</h4>
+                        <span class="badge bg-light text-dark border">Formal Corporate & Enterprise</span>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success">98% ATS Pass Rate</span>
+                </div>
+
+                <div class="p-4 bg-light rounded border mb-3 flex-grow-1" style="min-height: 220px;">
+                    <div class="bg-white p-3 rounded shadow-sm border mx-auto" style="max-width: 420px; font-size: 0.8rem;">
+                        <div class="text-center border-bottom border-primary pb-2 mb-2">
+                            <strong class="text-primary fs-6 d-block">Aarav Sharma</strong>
+                            <span class="text-muted small">Computer Science & Engineering</span>
+                        </div>
+                        <div class="small fw-bold text-primary mb-1">EDUCATION</div>
+                        <div class="d-flex justify-content-between small text-muted mb-2">
+                            <span>B.Tech in CSE</span>
+                            <span>2022 – 2026</span>
+                        </div>
+                        <div class="small fw-bold text-primary mb-1">TECHNICAL SKILLS</div>
+                        <div class="small text-muted mb-0">Python, Django, JavaScript, SQL, Git</div>
+                    </div>
+                </div>
+
+                <div class="mb-4 small text-muted">
+                    <strong>Best for:</strong> Campus placements, MNCs (TCS, Infosys, Wipro, Accenture), banks, consulting firms, and traditional IT departments.
+                </div>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{% url 'create_resume' %}?template=classic" class="btn btn-primary-custom flex-grow-1">
+                        <i class="bi bi-magic"></i> Use This Template
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template 2: Modern Minimal -->
+        <div class="col-lg-6 mb-4">
+            <div class="custom-card h-100 p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Modern Minimal</h4>
+                        <span class="badge bg-light text-dark border">Contemporary & Creative</span>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success">96% ATS Pass Rate</span>
+                </div>
+
+                <div class="p-4 bg-light rounded border mb-3 flex-grow-1" style="min-height: 220px;">
+                    <div class="bg-white p-3 rounded shadow-sm border mx-auto" style="max-width: 420px; font-size: 0.8rem;">
+                        <div class="d-flex justify-content-between align-items-end border-bottom border-3 border-primary pb-2 mb-2">
+                            <div>
+                                <strong class="fs-6 d-block">Aarav Sharma</strong>
+                                <span class="text-primary small fw-semibold">Software Developer</span>
+                            </div>
+                            <span class="small text-muted">Bengaluru, IN</span>
+                        </div>
+                        <div class="small fw-bold text-dark ps-2 border-start border-3 border-primary mb-1">EXPERIENCE</div>
+                        <div class="small text-muted ps-2 mb-2">• Engineered REST APIs using Python & Django</div>
+                        <div class="small fw-bold text-dark ps-2 border-start border-3 border-primary mb-1">PROJECTS</div>
+                        <div class="small text-muted ps-2 mb-0">• ResumeCraft AI: Intelligent Web Platform</div>
+                    </div>
+                </div>
+
+                <div class="mb-4 small text-muted">
+                    <strong>Best for:</strong> Modern product startups, SaaS companies, UI/UX engineers, and tech firms looking for clean, contemporary aesthetics.
+                </div>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{% url 'create_resume' %}?template=modern" class="btn btn-primary-custom flex-grow-1">
+                        <i class="bi bi-magic"></i> Use This Template
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template 3: Developer Portfolio -->
+        <div class="col-lg-6 mb-4">
+            <div class="custom-card h-100 p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Developer Portfolio</h4>
+                        <span class="badge bg-dark text-white">Full Stack & DevOps</span>
+                    </div>
+                    <span class="badge bg-info-subtle text-info border border-info">Tech Recruiter Favorite</span>
+                </div>
+
+                <div class="p-4 bg-light rounded border mb-3 flex-grow-1" style="min-height: 220px;">
+                    <div class="bg-white rounded shadow-sm border mx-auto overflow-hidden" style="max-width: 420px; font-size: 0.8rem;">
+                        <div class="bg-dark text-white p-2 border-bottom border-3 border-primary">
+                            <strong class="fs-6 d-block text-white">Aarav Sharma</strong>
+                            <span class="text-info font-monospace small">$ git clone full-stack-engineer</span>
+                        </div>
+                        <div class="p-3">
+                            <div class="small fw-bold text-dark font-monospace bg-light p-1 rounded mb-1">CORE TECH STACK</div>
+                            <div class="mb-2">
+                                <span class="badge bg-light text-dark border font-monospace me-1">Python</span>
+                                <span class="badge bg-light text-dark border font-monospace me-1">Django</span>
+                                <span class="badge bg-light text-dark border font-monospace me-1">Docker</span>
+                            </div>
+                            <div class="small fw-bold text-dark font-monospace bg-light p-1 rounded mb-1">REPOSITORIES & PROJECTS</div>
+                            <div class="small text-muted">github.com/aaravsharma-dev/resumecraft-ai</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4 small text-muted">
+                    <strong>Best for:</strong> Backend Engineers, Full-Stack Developers, Cloud/DevOps practitioners, and competitive programmers highlighting GitHub work.
+                </div>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{% url 'create_resume' %}?template=developer" class="btn btn-primary-custom flex-grow-1">
+                        <i class="bi bi-magic"></i> Use This Template
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template 4: Student Fresher -->
+        <div class="col-lg-6 mb-4">
+            <div class="custom-card h-100 p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Student Fresher</h4>
+                        <span class="badge bg-success-subtle text-success border border-success">Undergraduate & Interns</span>
+                    </div>
+                    <span class="badge bg-primary-light text-primary">Academic First</span>
+                </div>
+
+                <div class="p-4 bg-light rounded border mb-3 flex-grow-1" style="min-height: 220px;">
+                    <div class="bg-white p-3 rounded shadow-sm border mx-auto" style="max-width: 420px; font-size: 0.8rem;">
+                        <div class="d-flex justify-content-between align-items-baseline border-bottom pb-2 mb-2">
+                            <div>
+                                <strong class="text-primary fs-6 d-block">Aarav Sharma</strong>
+                                <span class="text-muted small">B.Tech Computer Science '26</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success">8.85 CGPA</span>
+                        </div>
+                        <div class="small fw-bold text-dark border-bottom border-primary pb-1 mb-1">EDUCATION & COURSEWORK</div>
+                        <div class="small text-muted mb-2">NITK • DSA, DBMS, Operating Systems, Networks</div>
+                        <div class="small fw-bold text-dark border-bottom border-primary pb-1 mb-1">ACADEMIC PROJECTS & HACKATHONS</div>
+                        <div class="small text-muted mb-0">Smart India Hackathon Finalist 2024</div>
+                    </div>
+                </div>
+
+                <div class="mb-4 small text-muted">
+                    <strong>Best for:</strong> College students, freshers with 0-1 years of experience, summer interns, and campus placement drives.
+                </div>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{% url 'create_resume' %}?template=fresher" class="btn btn-primary-custom flex-grow-1">
+                        <i class="bi bi-magic"></i> Use This Template
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

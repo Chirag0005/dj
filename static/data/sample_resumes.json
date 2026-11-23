@@ -1,0 +1,103 @@
+{
+  "sample_developer": {
+    "id": "sample-cse-developer-01",
+    "title": "Software Engineer Resume (Full Stack)",
+    "template": "developer",
+    "lastModified": "2026-11-20T10:30:00.000Z",
+    "personal": {
+      "fullName": "Aarav Sharma",
+      "professionalTitle": "Aspiring Full Stack Engineer & Computer Science Undergraduate",
+      "email": "aarav.sharma@example.com",
+      "phone": "+91 98765 43210",
+      "location": "Bengaluru, India",
+      "linkedin": "https://linkedin.com/in/aaravsharma-dev",
+      "github": "https://github.com/aaravsharma-dev",
+      "portfolio": "https://aaravsharma.dev",
+      "summary": "Forward-thinking Computer Science student with practical experience in Python, Django, JavaScript, and cloud architectures. Demonstrated history of designing responsive, accessible web applications and high-throughput REST APIs. Passionate about software craftsmanship, clean code patterns, and developing high-impact products."
+    },
+    "education": [
+      {
+        "id": "edu-1",
+        "institution": "National Institute of Technology, Karnataka",
+        "degree": "Bachelor of Technology",
+        "specialization": "Computer Science & Engineering",
+        "startYear": "2022",
+        "endYear": "2026",
+        "grade": "8.85 / 10.0 CGPA"
+      },
+      {
+        "id": "edu-2",
+        "institution": "Delhi Public School, R.K. Puram",
+        "degree": "Senior School Certificate (Class XII)",
+        "specialization": "Science (PCM + Computer Science)",
+        "startYear": "2020",
+        "endYear": "2022",
+        "grade": "96.4%"
+      }
+    ],
+    "experience": [
+      {
+        "id": "exp-1",
+        "company": "TechNova Solutions",
+        "role": "Software Development Engineering Intern",
+        "duration": "May 2025 – July 2025",
+        "description": "• Built and integrated 6 asynchronous REST endpoints using Python and Django, reducing payload size by 35% through query optimization.\n• Collaborated with frontend engineers to construct responsive client dashboards using modern JavaScript and Bootstrap 5.\n• Implemented automated test suites achieving 88% unit test coverage and preventing deployment regression."
+      }
+    ],
+    "projects": [
+      {
+        "id": "proj-1",
+        "name": "ResumeCraft AI – Intelligent Resume Platform",
+        "technologies": "Django, Python, Google GenAI SDK, JavaScript, Bootstrap 5, WhiteNoise",
+        "url": "https://github.com/aaravsharma-dev/resumecraft-ai",
+        "description": "• Architected a database-free, privacy-preserving resume builder utilizing browser localStorage and Google Gemini AI.\n• Implemented 8 AI career assistants including ATS scoring simulation, experience enhancement, and job description matching.\n• Engineered 4 responsive A4 templates with print-to-PDF fidelity and real-time live preview rendering."
+      },
+      {
+        "id": "proj-2",
+        "name": "CloudStore – Distributed Inventory System",
+        "technologies": "Python, FastREST, Redis, Docker, Postman",
+        "url": "https://github.com/aaravsharma-dev/cloudstore",
+        "description": "• Developed a distributed caching layer utilizing Redis that curtailed database read latencies by 60%.\n• Designed comprehensive OpenAPI documentation and automated CI/CD pipeline triggers."
+      }
+    ],
+    "skills": {
+      "languages": "Python, JavaScript (ES6+), C++, SQL, HTML5, CSS3",
+      "frameworks": "Django, REST Framework, Bootstrap 5, Express.js",
+      "tools": "Git, GitHub, Docker, Postman, Linux / Bash, Render, VS Code",
+      "technical": "Object-Oriented Design, RESTful API Architecture, Data Structures & Algorithms, Database Design",
+      "soft": "Problem Solving, Agile Collaboration, Technical Communication, Rapid Adaptability"
+    },
+    "certifications": [
+      {
+        "id": "cert-1",
+        "name": "AWS Certified Cloud Practitioner",
+        "organization": "Amazon Web Services",
+        "year": "2025"
+      },
+      {
+        "id": "cert-2",
+        "name": "Meta Front-End Developer Professional Certificate",
+        "organization": "Meta / Coursera",
+        "year": "2024"
+      }
+    ],
+    "achievements": [
+      {
+        "id": "ach-1",
+        "title": "Smart India Hackathon 2024 Finalist",
+        "description": "Led a 4-member student team to develop an automated agricultural monitoring dashboard selected among top 30 nation-wide."
+      },
+      {
+        "id": "ach-2",
+        "title": "LeetCode Knight Ranking (Top 4%)",
+        "description": "Solved 450+ algorithmic data structure problems spanning Dynamic Programming, Graphs, and Trees."
+      }
+    ],
+    "customization": {
+      "accentColor": "#6257E8",
+      "fontFamily": "Inter",
+      "fontSize": "normal",
+      "spacing": "normal"
+    }
+  }
+}

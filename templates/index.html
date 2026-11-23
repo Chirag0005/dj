@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center position-relative">
+    <div class="container">
+        <!-- AI Badge Pill -->
+        <div class="badge-ai mb-3">
+            <i class="bi bi-stars"></i> Powered by Google Gemini AI & Intelligent ATS Optimization
+        </div>
+
+        <!-- Heading & Subtitle -->
+        <h1 class="hero-title">
+            Your Career Deserves a<br><span>Better Resume.</span>
+        </h1>
+        <p class="hero-subtitle">
+            Create professional, ATS-friendly resumes with beautiful templates and the power of AI. Built with zero database footprint for 100% private, instant client-side crafting.
+        </p>
+
+        <!-- CTA Action Buttons -->
+        <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
+            <a href="{% url 'create_resume' %}" class="btn btn-primary-custom btn-lg">
+                <i class="bi bi-magic"></i> Build My Resume
+            </a>
+            <a href="{% url 'templates' %}" class="btn btn-outline-custom btn-lg">
+                <i class="bi bi-grid-fill"></i> Explore Templates
+            </a>
+            <button onclick="loadSampleResumeToDashboard(); location.href='{% url 'dashboard' %}';" class="btn btn-outline-custom btn-lg">
+                <i class="bi bi-file-earmark-code"></i> Try CSE Demo Resume
+            </button>
+        </div>
+
+        <!-- Hero Resume Mockup with Floating Interactive Badges -->
+        <div class="hero-mockup-wrapper">
+            <div class="floating-pill floating-pill-left">
+                <span class="badge bg-success rounded-circle p-1"><i class="bi bi-check-lg text-white"></i></span>
+                <div>
+                    <div class="small fw-bold text-dark">96% ATS Compatibility</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Verified by Gemini Engine</div>
+                </div>
+            </div>
+
+            <div class="floating-pill floating-pill-right">
+                <div class="brand-icon" style="width:28px;height:28px;font-size:0.9rem;">
+                    <i class="bi bi-cpu"></i>
+                </div>
+                <div>
+                    <div class="small fw-bold text-dark">Gemini AI Assistant</div>
+                    <div class="text-muted" style="font-size:0.75rem;">8 Smart Career Tools</div>
+                </div>
+            </div>
+
+            <div class="hero-mockup p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div class="d-flex gap-2">
+                        <span class="rounded-circle bg-danger d-inline-block" style="width:12px;height:12px;"></span>
+                        <span class="rounded-circle bg-warning d-inline-block" style="width:12px;height:12px;"></span>
+                        <span class="rounded-circle bg-success d-inline-block" style="width:12px;height:12px;"></span>
+                    </div>
+                    <div class="small text-muted font-monospace"><i class="bi bi-lock-fill"></i> resumecraft.ai/preview/aarav-sharma</div>
+                    <div class="badge bg-primary-light text-primary">Live A4 Rendering</div>
+                </div>
+
+                <!-- Mini Mockup Content -->
+                <div class="text-start bg-white p-4 rounded shadow-sm border" style="max-width: 650px; margin: 0 auto;">
+                    <div class="d-flex justify-content-between align-items-baseline border-bottom border-2 border-primary pb-2 mb-3">
+                        <div>
+                            <h3 class="fw-bold mb-0 text-primary">Aarav Sharma</h3>
+                            <div class="text-muted small">Computer Science & Engineering • Full Stack Developer</div>
+                        </div>
+                        <div class="small text-muted text-end">
+                            <div>aarav.sharma@example.com</div>
+                            <div>Bengaluru, India</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-uppercase small text-dark mb-1">Professional Summary</h6>
+                        <p class="small text-muted mb-0">
+                            Results-driven Computer Science undergraduate with proven expertise in Python, Django, REST architectures, and cloud deployments. Demonstrated ability to translate complex logic into resilient client applications.
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-uppercase small text-dark mb-1">Key Technical Projects</h6>
+                        <div class="small mb-1 d-flex justify-content-between">
+                            <strong>ResumeCraft AI</strong>
+                            <span class="text-muted">Django, Gemini GenAI, JavaScript</span>
+                        </div>
+                        <div class="small text-muted">
+                            • Engineered a database-free resume management engine leveraging browser localStorage and Gemini 2.5 Flash.<br>
+                            • Designed 4 responsive ATS-tailored layouts with live print-to-PDF precision.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust & Architecture Metrics -->
+<section class="py-4 bg-white border-top border-bottom">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-3 col-6">
+                <div class="h3 fw-bold text-primary mb-1">100%</div>
+                <div class="small text-muted">Private (No Database)</div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="h3 fw-bold text-primary mb-1">8 Tools</div>
+                <div class="small text-muted">Google Gemini AI Features</div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="h3 fw-bold text-primary mb-1">4 Layouts</div>
+                <div class="small text-muted">Recruiter-Approved Templates</div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="h3 fw-bold text-primary mb-1">0ms</div>
+                <div class="small text-muted">Server Database Latency</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI Features Showcase -->
+<section id="ai-features" class="py-5">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge-ai mb-2"><i class="bi bi-stars"></i> Intelligent Career Copilot</span>
+            <h2 class="fw-bold mb-3">Empowered by Google Gemini AI</h2>
+            <p class="text-muted">
+                Craft compelling bullet points, match job descriptions, calculate ATS scores, and highlight your technical accomplishments without fabricating facts.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-card-text"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">AI Summary Generator</h5>
+                    <p class="text-muted small mb-0">
+                        Synthesizes your real education, skills, and career focus into an authoritative, 3-sentence executive summary.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-lightning-charge"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Experience Improver</h5>
+                    <p class="text-muted small mb-0">
+                        Upgrades basic internship notes into Google XYZ-style bullet points with strong action verbs and zero hallucinations.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-code-square"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Project Enhancer</h5>
+                    <p class="text-muted small mb-0">
+                        Translates your software repo or semester project into technical bullet points that demonstrate software architecture.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-cpu-fill"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Smart Skill Suggestion</h5>
+                    <p class="text-muted small mb-0">
+                        Analyzes your target career role to recommend in-demand technologies and industry-standard tools to master.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">ATS Resume Analyzer</h5>
+                    <p class="text-muted small mb-0">
+                        Simulates applicant tracking systems, scoring keyword match, section completeness, and formatting clarity against real job descriptions.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Job Description Matcher</h5>
+                    <p class="text-muted small mb-0">
+                        Pinpoints exact matching qualifications and highlights missing critical requirements to tailor your resume for specific positions.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 7 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-compass"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Career Objective Engine</h5>
+                    <p class="text-muted small mb-0">
+                        Calibrated specifically for students, freshers, or professionals seeking high-impact, buzzword-free statements.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 8 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="custom-card h-100">
+                    <div class="feature-icon-box">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Complete Resume Audit</h5>
+                    <p class="text-muted small mb-0">
+                        Conducts an end-to-end review evaluating grammar, professional tone, section organization, and immediate quick-win opportunities.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Templates Showcase -->
+<section class="py-5 bg-white border-top border-bottom">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-light text-primary border mb-2 px-3 py-2 fw-semibold">Crafted for Placement Success</span>
+            <h2 class="fw-bold mb-3">4 Recruiter-Approved Resume Templates</h2>
+            <p class="text-muted">
+                Switch between distinct layout archetypes seamlessly without losing a single character of entered data.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Template 1 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="custom-card text-center h-100 d-flex flex-column">
+                    <div class="p-3 bg-light rounded mb-3" style="min-height: 180px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                        <i class="bi bi-journal-text text-primary fs-1 mb-2"></i>
+                        <span class="fw-bold text-dark">Professional Classic</span>
+                        <small class="text-muted">Balanced, traditional corporate</small>
+                    </div>
+                    <h6 class="fw-bold mb-2">Professional Classic</h6>
+                    <p class="small text-muted flex-grow-1">Ideal for campus placements, traditional corporate firms, and consulting interviews.</p>
+                    <a href="{% url 'create_resume' %}?template=classic" class="btn btn-sm btn-outline-custom mt-2">
+                        Use Template
+                    </a>
+                </div>
+            </div>
+
+            <!-- Template 2 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="custom-card text-center h-100 d-flex flex-column">
+                    <div class="p-3 bg-light rounded mb-3" style="min-height: 180px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                        <i class="bi bi-layout-sidebar-inset text-primary fs-1 mb-2"></i>
+                        <span class="fw-bold text-dark">Modern Minimal</span>
+                        <small class="text-muted">Clean lines, generous whitespace</small>
+                    </div>
+                    <h6 class="fw-bold mb-2">Modern Minimal</h6>
+                    <p class="small text-muted flex-grow-1">Sleek typographical hierarchy and modern left-border section accents.</p>
+                    <a href="{% url 'create_resume' %}?template=modern" class="btn btn-sm btn-outline-custom mt-2">
+                        Use Template
+                    </a>
+                </div>
+            </div>
+
+            <!-- Template 3 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="custom-card text-center h-100 d-flex flex-column">
+                    <div class="p-3 bg-dark text-white rounded mb-3" style="min-height: 180px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                        <i class="bi bi-terminal-fill text-info fs-1 mb-2"></i>
+                        <span class="fw-bold text-white">Developer Portfolio</span>
+                        <small class="text-white-50">GitHub, Tech Badges, Monospace</small>
+                    </div>
+                    <h6 class="fw-bold mb-2">Developer Portfolio</h6>
+                    <p class="small text-muted flex-grow-1">Tailored for Software Engineers, web developers, and competitive coders.</p>
+                    <a href="{% url 'create_resume' %}?template=developer" class="btn btn-sm btn-primary-custom mt-2">
+                        Use Template
+                    </a>
+                </div>
+            </div>
+
+            <!-- Template 4 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="custom-card text-center h-100 d-flex flex-column">
+                    <div class="p-3 bg-light rounded mb-3" style="min-height: 180px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                        <i class="bi bi-mortarboard-fill text-success fs-1 mb-2"></i>
+                        <span class="fw-bold text-dark">Student Fresher</span>
+                        <small class="text-muted">Education & Projects Front-and-Center</small>
+                    </div>
+                    <h6 class="fw-bold mb-2">Student Fresher</h6>
+                    <p class="small text-muted flex-grow-1">Puts university credentials, coursework, hackathons, and certifications first.</p>
+                    <a href="{% url 'create_resume' %}?template=fresher" class="btn btn-sm btn-outline-custom mt-2">
+                        Use Template
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-5">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-primary-light text-primary mb-2 px-3 py-2 fw-semibold">Simple 3-Step Process</span>
+            <h2 class="fw-bold mb-3">How ResumeCraft AI Works</h2>
+            <p class="text-muted">From blank page to interview-ready PDF in under 5 minutes.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="custom-card text-center h-100 p-4">
+                    <div class="rounded-circle bg-primary-light text-primary mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold fs-4" style="width:60px;height:60px;">
+                        1
+                    </div>
+                    <h5 class="fw-bold mb-2">Fill or Import Details</h5>
+                    <p class="text-muted small mb-0">
+                        Enter your academic details, technical projects, and skills. Or load our built-in CSE developer sample with one click to get started immediately.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="custom-card text-center h-100 p-4">
+                    <div class="rounded-circle bg-primary-light text-primary mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold fs-4" style="width:60px;height:60px;">
+                        2
+                    </div>
+                    <h5 class="fw-bold mb-2">Supercharge with Gemini AI</h5>
+                    <p class="text-muted small mb-0">
+                        Use our 8 integrated Gemini AI assistants to rewrite experience into punchy action verbs, match target job requirements, and run ATS scans.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="custom-card text-center h-100 p-4">
+                    <div class="rounded-circle bg-primary-light text-primary mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold fs-4" style="width:60px;height:60px;">
+                        3
+                    </div>
+                    <h5 class="fw-bold mb-2">Download ATS-Friendly PDF</h5>
+                    <p class="text-muted small mb-0">
+                        Choose your accent color and typography. Download a pixel-perfect, recruiter-approved A4 PDF directly using your browser's print engine.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Testimonials Section (Clearly labelled as Sample/Demo) -->
+<section class="py-5 bg-white border-top">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="badge bg-light text-muted border mb-2 px-3 py-1 small">Sample Student Feedback (Demo Data)</span>
+            <h2 class="fw-bold mb-3">Loved by Students & Job Seekers</h2>
+            <p class="text-muted">See how CSE students and freshers use ResumeCraft AI to land campus placements.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="custom-card h-100 d-flex flex-column">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="text-muted small flex-grow-1">
+                        "The Gemini bullet point improver transformed my weak project descriptions into professional action statements without hallucinating any fake numbers. Landed 3 placement interviews!"
+                    </p>
+                    <div class="d-flex align-items-center gap-2 pt-3 border-top">
+                        <div class="rounded-circle bg-primary-light text-primary p-2 fw-bold small">RP</div>
+                        <div>
+                            <div class="fw-bold small">Rohan Patel</div>
+                            <div class="text-muted" style="font-size:0.75rem;">B.Tech CSE '25 • Demo Testimonial</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="custom-card h-100 d-flex flex-column">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="text-muted small flex-grow-1">
+                        "The fact that my resumes stay in my browser localStorage without requiring a database login gives me complete privacy peace of mind. The Developer template is stunning."
+                    </p>
+                    <div class="d-flex align-items-center gap-2 pt-3 border-top">
+                        <div class="rounded-circle bg-primary-light text-primary p-2 fw-bold small">SK</div>
+                        <div>
+                            <div class="fw-bold small">Sneha Kulkarni</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Junior Full-Stack Developer • Demo Testimonial</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="custom-card h-100 d-flex flex-column">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="text-muted small flex-grow-1">
+                        "The ATS Analyzer showed me exactly which skills were missing from my resume when applying for a Python Backend role. Updated my projects accordingly and got shortlisted!"
+                    </p>
+                    <div class="d-flex align-items-center gap-2 pt-3 border-top">
+                        <div class="rounded-circle bg-primary-light text-primary p-2 fw-bold small">AM</div>
+                        <div>
+                            <div class="fw-bold small">Aditya Mishra</div>
+                            <div class="text-muted" style="font-size:0.75rem;">MCA Graduate • Demo Testimonial</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #6257E8 0%, #8B7CF6 100%);">
+    <div class="container text-center text-white py-4">
+        <h2 class="fw-bold text-white mb-3">Ready to Build Your Professional Identity?</h2>
+        <p class="text-white-50 max-w-700 mx-auto mb-4 fs-5">
+            Create an ATS-friendly resume in minutes with the power of Google Gemini AI. Free, secure, and instant.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{% url 'create_resume' %}" class="btn btn-light btn-lg text-primary fw-bold">
+                <i class="bi bi-magic"></i> Start Building Free
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-folder2-open"></i> Go to Dashboard
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

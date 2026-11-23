@@ -1,0 +1,1209 @@
+/**
+ * static/css/style.css
+ * ResumeCraft AI - Premium SaaS Stylesheet
+ *
+ * Color Palette:
+ * Primary: #6257E8
+ * Secondary: #8B7CF6
+ * Background: #F7F8FC
+ * White: #FFFFFF
+ * Text: #172033
+ * Muted: #64748B
+ * Success: #16A34A
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Merriweather:wght@300;400;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --primary: #6257E8;
+    --primary-hover: #5044D6;
+    --primary-light: #EEECFC;
+    --primary-glow: rgba(98, 87, 232, 0.15);
+    --secondary: #8B7CF6;
+    --background: #F7F8FC;
+    --white: #FFFFFF;
+    --text: #172033;
+    --muted: #64748B;
+    --success: #16A34A;
+    --success-light: #DCFCE7;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --border: #E2E8F0;
+    --card-shadow: 0 4px 20px -2px rgba(17, 24, 39, 0.05), 0 2px 6px -1px rgba(17, 24, 39, 0.02);
+    --card-shadow-hover: 0 12px 30px -4px rgba(98, 87, 232, 0.12), 0 4px 10px -2px rgba(17, 24, 39, 0.03);
+    --sheet-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 0 1px 1px rgba(0, 0, 0, 0.05);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    
+    /* Dynamic Resume Accents (overridden in editor) */
+    --resume-accent: #6257E8;
+    --resume-font: 'Inter', sans-serif;
+}
+
+/* ==============================================================================
+   BASE & TYPOGRAPHY
+   ============================================================================== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--text);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+/* ==============================================================================
+   NAVIGATION BAR
+   ============================================================================== */
+.navbar-custom {
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    padding: 0.85rem 0;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: var(--text);
+}
+
+.brand-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(98, 87, 232, 0.35);
+}
+
+.nav-link {
+    font-weight: 500;
+    color: var(--muted) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary) !important;
+    background-color: var(--primary-light);
+}
+
+/* ==============================================================================
+   BUTTONS & BADGES
+   ============================================================================== */
+.btn-primary-custom {
+    background-color: var(--primary);
+    border: 1px solid var(--primary);
+    color: white;
+    font-weight: 600;
+    padding: 0.65rem 1.4rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 14px rgba(98, 87, 232, 0.3);
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary-custom:hover, .btn-primary-custom:focus {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(98, 87, 232, 0.4);
+}
+
+.btn-outline-custom {
+    background-color: white;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.65rem 1.4rem;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-outline-custom:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: var(--text);
+}
+
+.btn-ai-inline {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid rgba(98, 87, 232, 0.25);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+}
+
+.btn-ai-inline:hover {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.badge-ai {
+    background: linear-gradient(135deg, rgba(98, 87, 232, 0.1), rgba(139, 124, 246, 0.15));
+    color: var(--primary);
+    border: 1px solid rgba(98, 87, 232, 0.25);
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* ==============================================================================
+   CARDS & CONTAINERS
+   ============================================================================== */
+.custom-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+    transition: var(--transition);
+}
+
+.custom-card:hover {
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* ==============================================================================
+   HERO & LANDING PAGE
+   ============================================================================== */
+.hero-section {
+    padding: 4.5rem 0 3.5rem;
+    background: radial-gradient(circle at 50% 0%, rgba(98, 87, 232, 0.08) 0%, rgba(247, 248, 252, 0) 65%);
+}
+
+.hero-title {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1.25rem;
+    letter-spacing: -0.03em;
+}
+
+.hero-title span {
+    background: linear-gradient(135deg, #6257E8 20%, #8B7CF6 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--muted);
+    max-width: 680px;
+    margin: 0 auto 2rem;
+    font-weight: 400;
+}
+
+.hero-mockup-wrapper {
+    position: relative;
+    max-width: 880px;
+    margin: 3rem auto 0;
+    perspective: 1000px;
+}
+
+.hero-mockup {
+    background: white;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    box-shadow: 0 25px 60px -15px rgba(98, 87, 232, 0.2), 0 0 1px 1px rgba(0,0,0,0.05);
+    overflow: hidden;
+    transform: rotateX(2deg);
+    transition: transform 0.4s ease;
+}
+
+.hero-mockup:hover {
+    transform: rotateX(0deg);
+}
+
+.floating-pill {
+    position: absolute;
+    background: white;
+    border: 1px solid var(--border);
+    padding: 0.65rem 1.2rem;
+    border-radius: 30px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    animation: floatUpDown 4s ease-in-out infinite;
+    z-index: 2;
+}
+
+.floating-pill-left {
+    top: 15%;
+    left: -20px;
+}
+
+.floating-pill-right {
+    bottom: 20%;
+    right: -20px;
+    animation-delay: 2s;
+}
+
+@keyframes floatUpDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Feature Showcase */
+.feature-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+}
+
+/* ==============================================================================
+   DASHBOARD
+   ============================================================================== */
+.dashboard-header {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 2.2rem 0;
+    margin-bottom: 2rem;
+}
+
+.resume-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.resume-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-4px);
+    border-color: rgba(98, 87, 232, 0.3);
+}
+
+.resume-card-thumb {
+    height: 160px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.mini-resume-sheet {
+    width: 120px;
+    height: 150px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mini-line {
+    height: 3px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+.mini-line.accent {
+    background: var(--primary);
+}
+
+.progress-thin {
+    height: 6px;
+    border-radius: 3px;
+    background-color: #e2e8f0;
+}
+
+.progress-bar-custom {
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 3px;
+}
+
+.empty-state {
+    padding: 4rem 1.5rem;
+    text-align: center;
+    background: white;
+    border-radius: var(--radius-xl);
+    border: 2px dashed #cbd5e1;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ==============================================================================
+   EDITOR LAYOUT & FORMS
+   ============================================================================== */
+.editor-container {
+    padding: 1.5rem 0 3rem;
+}
+
+.editor-toolbar {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: sticky;
+    top: 76px;
+    z-index: 1020;
+}
+
+.save-status-pill {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.save-status-pill.saved {
+    color: var(--success);
+}
+
+.save-status-pill.saving {
+    color: var(--primary);
+}
+
+.form-section-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+}
+
+.form-section-header {
+    padding: 1.1rem 1.4rem;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: var(--transition);
+}
+
+.form-section-header:hover {
+    background-color: #fafbfc;
+}
+
+.form-section-header.active {
+    border-bottom-color: var(--border);
+}
+
+.section-icon-pill {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-right: 0.75rem;
+}
+
+.form-section-body {
+    padding: 1.4rem;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+}
+
+.form-control, .form-select {
+    border-color: var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.85rem;
+    font-size: 0.92rem;
+    color: var(--text);
+    transition: var(--transition);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.repeater-card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: var(--transition);
+}
+
+.repeater-card:hover {
+    border-color: #cbd5e1;
+}
+
+.repeater-actions {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    gap: 0.35rem;
+}
+
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    transition: var(--transition);
+}
+
+.btn-icon:hover {
+    background: #e2e8f0;
+    color: var(--danger);
+}
+
+/* Color Picker Swatches */
+.color-swatch-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.color-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    outline: 2px solid transparent;
+    transition: var(--transition);
+}
+
+.color-swatch.active {
+    outline-color: var(--primary);
+    transform: scale(1.15);
+}
+
+/* ==============================================================================
+   LIVE RESUME PREVIEW (A4 SHEET)
+   ============================================================================== */
+.preview-sticky-wrapper {
+    position: sticky;
+    top: 86px;
+    height: calc(100vh - 110px);
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.preview-sticky-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.preview-sticky-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.preview-sticky-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.preview-sheet-container {
+    background: #cbd5e1;
+    padding: 1.5rem 1rem;
+    border-radius: var(--radius-lg);
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+}
+
+.resume-sheet {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    box-shadow: var(--sheet-shadow);
+    padding: 16mm 16mm;
+    box-sizing: border-box;
+    font-family: var(--resume-font);
+    color: #1a202c;
+    line-height: 1.45;
+    position: relative;
+    transform-origin: top center;
+    transition: var(--transition);
+}
+
+/* Dynamic Font Sizes */
+.resume-sheet.fs-small { font-size: 0.82rem; }
+.resume-sheet.fs-normal { font-size: 0.92rem; }
+.resume-sheet.fs-large { font-size: 1.02rem; }
+
+/* Dynamic Section Spacing */
+.resume-sheet.spacing-compact .resume-section { margin-bottom: 0.85rem; }
+.resume-sheet.spacing-normal .resume-section { margin-bottom: 1.35rem; }
+.resume-sheet.spacing-spacious .resume-section { margin-bottom: 1.85rem; }
+
+/* Generic Resume Elements */
+.resume-section-title {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.resume-entry {
+    margin-bottom: 0.75rem;
+}
+
+.resume-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-weight: 600;
+}
+
+.resume-entry-sub {
+    display: flex;
+    justify-content: space-between;
+    color: #4b5563;
+    font-size: 0.88em;
+    margin-bottom: 0.25rem;
+}
+
+.resume-bullet-list {
+    margin: 0.3rem 0 0 1.25rem;
+    padding: 0;
+    list-style-type: disc;
+}
+
+.resume-bullet-list li {
+    margin-bottom: 0.35rem;
+    line-height: 1.5;
+    color: inherit;
+}
+
+.resume-bullet-list li:last-child {
+    margin-bottom: 0.15rem;
+}
+
+.resume-summary-text {
+    line-height: 1.6;
+    color: inherit;
+    font-size: 0.95em;
+}
+
+.resume-summary-text p.resume-paragraph {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.resume-summary-text p.resume-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+.resume-paragraph {
+    margin-bottom: 0.45rem;
+    line-height: 1.52;
+}
+
+.resume-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+.resume-subheading {
+    font-size: 0.95em;
+    font-weight: 700;
+    margin-top: 0.4rem;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+}
+
+.resume-sheet strong,
+.resume-sheet b {
+    font-weight: 700;
+    color: inherit;
+}
+
+.resume-sheet em,
+.resume-sheet i {
+    font-style: italic;
+    color: inherit;
+}
+
+.resume-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88em;
+    background: #f1f5f9;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    color: #0f172a;
+}
+
+.resume-contact-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    font-size: 0.85em;
+    color: #4b5563;
+}
+
+.resume-contact-bar a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.skill-tag-pill {
+    display: inline-block;
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.84em;
+    margin: 2px 4px 2px 0;
+    border: 1px solid #e2e8f0;
+}
+
+/* ==============================================================================
+   TEMPLATE 1: PROFESSIONAL CLASSIC
+   ============================================================================== */
+.template-classic .resume-header {
+    text-align: center;
+    border-bottom: 2px solid var(--resume-accent);
+    padding-bottom: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.template-classic .resume-name {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: var(--resume-accent);
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+}
+
+.template-classic .resume-title {
+    font-size: 1.05rem;
+    color: #4b5563;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+}
+
+.template-classic .resume-contact-bar {
+    justify-content: center;
+}
+
+.template-classic .resume-section-title {
+    color: var(--resume-accent);
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.25rem;
+}
+
+/* ==============================================================================
+   TEMPLATE 2: MODERN MINIMAL
+   ============================================================================== */
+.template-modern .resume-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 3px solid var(--resume-accent);
+    padding-bottom: 1.2rem;
+    margin-bottom: 1.4rem;
+}
+
+.template-modern .resume-name {
+    font-size: 2.3rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.1;
+}
+
+.template-modern .resume-title {
+    font-size: 1.1rem;
+    color: var(--resume-accent);
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.template-modern .resume-section-title {
+    color: #111827;
+    border-left: 4px solid var(--resume-accent);
+    padding-left: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/* ==============================================================================
+   TEMPLATE 3: DEVELOPER PORTFOLIO
+   ============================================================================== */
+.template-developer .resume-header {
+    background: #0f172a;
+    color: white;
+    margin: -16mm -16mm 14mm -16mm;
+    padding: 14mm 16mm;
+    border-bottom: 4px solid var(--resume-accent);
+}
+
+.template-developer .resume-name {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.02em;
+}
+
+.template-developer .resume-title {
+    font-size: 1.05rem;
+    color: #94a3b8;
+    font-weight: 500;
+    margin-top: 0.2rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.template-developer .resume-contact-bar {
+    margin-top: 0.8rem;
+    color: #cbd5e1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+}
+
+.template-developer .resume-contact-bar a {
+    color: #e2e8f0;
+}
+
+.template-developer .resume-section-title {
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    background: #f1f5f9;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    border-left: 4px solid var(--resume-accent);
+}
+
+.template-developer .tech-pill {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+/* ==============================================================================
+   TEMPLATE 4: STUDENT FRESHER
+   ============================================================================== */
+.template-fresher .resume-header {
+    text-align: left;
+    border-bottom: 1.5px solid #cbd5e1;
+    padding-bottom: 1rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.template-fresher .resume-name {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: var(--resume-accent);
+}
+
+.template-fresher .resume-title {
+    font-size: 1rem;
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.template-fresher .resume-section-title {
+    color: #1e293b;
+    border-bottom: 2px solid var(--resume-accent);
+    padding-bottom: 0.2rem;
+}
+
+.template-fresher .cgpa-badge {
+    background: var(--success-light);
+    color: var(--success);
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+/* ==============================================================================
+   MODALS, TOASTS & AI PANEL
+   ============================================================================== */
+.toast-container-custom {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1090;
+}
+
+.toast-custom {
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 280px;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.toast-custom.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.ai-tab-btn {
+    border: none;
+    background: #f1f5f9;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ai-tab-btn:hover, .ai-tab-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 7px solid var(--primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--primary);
+    margin: 0 auto 0.75rem;
+    background: var(--primary-light);
+}
+
+.score-circle span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+/* ==============================================================================
+   PRINT STYLES (@media print)
+   ============================================================================== */
+@media print {
+    /* 1. Page & Root Setup - Zero margin removes browser header/footer margins */
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
+
+    html, body {
+        background: #ffffff !important;
+        color: #172033 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 2. Hide all non-printable UI elements */
+    header,
+    nav,
+    .navbar,
+    .navbar-custom,
+    footer,
+    .editor-toolbar,
+    .editor-forms-col,
+    #editorColumn,
+    .mobile-tab-switch,
+    .btn,
+    .btn-ai-inline,
+    .toast-container-custom,
+    .modal,
+    .modal-backdrop,
+    .offcanvas,
+    .preview-actions-bar,
+    .no-print,
+    .preview-sticky-wrapper > .d-flex,
+    .clean-print-tip {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 3. Force preview column and containers to be visible, full width, and unclipped */
+    #previewColumn,
+    .preview-col,
+    .preview-sheet-container,
+    .preview-sticky-wrapper,
+    .editor-container,
+    .preview-container,
+    .container,
+    .container-fluid,
+    .row {
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        position: static !important;
+        float: none !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: auto !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    /* 4. Resume sheet styling for print - Internal padding provides professional A4 page margins */
+    .resume-sheet {
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 297mm !important;
+        box-sizing: border-box !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 14mm 16mm !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        color: #172033 !important;
+        font-family: var(--resume-font) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        page-break-after: auto;
+        break-after: auto;
+    }
+
+    /* 5. Section and entry break behavior */
+    .resume-section {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-bottom: 1.1rem !important;
+    }
+
+    .resume-entry {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .resume-header {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .resume-summary-text {
+        line-height: 1.5 !important;
+    }
+
+    .resume-paragraph {
+        margin-bottom: 0.35rem !important;
+        line-height: 1.45 !important;
+    }
+
+    .resume-bullet-list {
+        margin: 0.25rem 0 0 1.2rem !important;
+        padding: 0 !important;
+        list-style-type: disc !important;
+    }
+
+    .resume-bullet-list li {
+        margin-bottom: 0.25rem !important;
+        line-height: 1.45 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .resume-sheet strong,
+    .resume-sheet b {
+        font-weight: 700 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .resume-sheet em,
+    .resume-sheet i {
+        font-style: italic !important;
+    }
+
+    /* Template-specific print headers */
+    .template-developer .resume-header {
+        margin: 0 0 6mm 0 !important;
+        padding: 6mm 8mm !important;
+        background: #0f172a !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .template-classic .resume-header {
+        border-bottom: 2px solid var(--resume-accent) !important;
+        padding-bottom: 0.8rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .template-modern .resume-header {
+        border-bottom: 3px solid var(--resume-accent) !important;
+        padding-bottom: 0.8rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .template-fresher .resume-header {
+        border-bottom: 1.5px solid #cbd5e1 !important;
+        padding-bottom: 0.8rem !important;
+        margin-bottom: 1rem !important;
+    }
+}
+
+/* ==============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================== */
+@media (max-width: 991px) {
+    .hero-title {
+        font-size: 2.3rem;
+    }
+    
+    .floating-pill {
+        display: none;
+    }
+
+    .preview-sticky-wrapper {
+        position: static;
+        height: auto;
+        overflow-y: visible;
+        margin-top: 1.5rem;
+    }
+
+    .resume-sheet {
+        width: 100%;
+        min-height: auto;
+        padding: 1rem;
+    }
+}
