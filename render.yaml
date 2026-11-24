@@ -3,7 +3,7 @@ services:
     name: resumecraft-ai
     runtime: python
     buildCommand: "pip install -r requirements.txt && python manage.py migrate --no-input && python manage.py collectstatic --no-input"
-    startCommand: "gunicorn resumecraft.wsgi:application"
+    startCommand: "python manage.py migrate --no-input && gunicorn resumecraft.wsgi:application"
     envVars:
       - key: SECRET_KEY
         generateValue: true

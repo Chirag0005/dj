@@ -9,6 +9,7 @@ Function-based views for ResumeCraft AI:
 
 import json
 import logging
+import re
 from pathlib import Path
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpRequest, HttpResponseBadRequest, HttpResponseForbidden, Http404
@@ -19,6 +20,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, DatabaseError
 from django.contrib import messages
 
 from . import ai_service
@@ -210,28 +212,32 @@ def signup_view(request: HttpRequest):
                 'page_title': 'Sign Up – ResumeCraft AI'
             })
 
-        # Duplicate username check
-        if User.objects.filter(username__iexact=username).exists():
-            messages.error(request, f"The username '{username}' is already taken. Please choose another.")
+        # Username format validation
+        if not re.match(r'^[\w.@+-]+$', username):
+            messages.error(request, "Username may contain only letters, numbers, and @/./+/-/_ characters without spaces.")
             return render(request, 'signup.html', {
                 'full_name': full_name, 'email': email,
                 'page_title': 'Sign Up – ResumeCraft AI'
             })
 
-        # Duplicate email check
-        if User.objects.filter(email__iexact=email).exists():
-            messages.error(request, f"An account with email '{email}' already exists. Please log in instead.")
-            return render(request, 'signup.html', {
-                'full_name': full_name, 'username': username,
-                'page_title': 'Sign Up – ResumeCraft AI'
-            })
-
-        # Django password complexity validation
+        # Database checks for duplicate username or email
         try:
-            validate_password(password)
-        except ValidationError as e:
-            for err in e.messages:
-                messages.error(request, err)
+            if User.objects.filter(username__iexact=username).exists():
+                messages.error(request, f"The username '{username}' is already taken. Please choose another.")
+                return render(request, 'signup.html', {
+                    'full_name': full_name, 'email': email,
+                    'page_title': 'Sign Up – ResumeCraft AI'
+                })
+
+            if User.objects.filter(email__iexact=email).exists():
+                messages.error(request, f"An account with email '{email}' already exists. Please log in instead.")
+                return render(request, 'signup.html', {
+                    'full_name': full_name, 'username': username,
+                    'page_title': 'Sign Up – ResumeCraft AI'
+                })
+        except DatabaseError as db_err:
+            logger.error(f"Database error during signup existence check: {db_err}", exc_info=True)
+            messages.error(request, "Database connection error. Please try again in a few moments.")
             return render(request, 'signup.html', {
                 'full_name': full_name, 'username': username, 'email': email,
                 'page_title': 'Sign Up – ResumeCraft AI'
@@ -242,19 +248,50 @@ def signup_view(request: HttpRequest):
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ''
 
+        # Django password complexity validation
+        temp_user = User(username=username, email=email, first_name=first_name, last_name=last_name)
+        try:
+            validate_password(password, user=temp_user)
+        except ValidationError as e:
+            for err in e.messages:
+                messages.error(request, err)
+            return render(request, 'signup.html', {
+                'full_name': full_name, 'username': username, 'email': email,
+                'page_title': 'Sign Up – ResumeCraft AI'
+            })
+
         # Create user with hashed password
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name
-        )
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+        except IntegrityError:
+            messages.error(request, "An account with that username or email already exists. Please log in.")
+            return render(request, 'signup.html', {
+                'full_name': full_name, 'username': username, 'email': email,
+                'page_title': 'Sign Up – ResumeCraft AI'
+            })
+        except Exception as exc:
+            logger.error(f"Error creating user account: {exc}", exc_info=True)
+            messages.error(request, f"Unable to create account: {str(exc)}")
+            return render(request, 'signup.html', {
+                'full_name': full_name, 'username': username, 'email': email,
+                'page_title': 'Sign Up – ResumeCraft AI'
+            })
 
         # Log user in and redirect to dashboard
-        login(request, user)
-        messages.success(request, f"Welcome to ResumeCraft AI, {first_name or username}! Your account has been created.")
-        return redirect('dashboard')
+        try:
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f"Welcome to ResumeCraft AI, {first_name or username}! Your account has been created.")
+            return redirect('dashboard')
+        except Exception as exc:
+            logger.error(f"Session login error after user creation: {exc}", exc_info=True)
+            messages.success(request, "Account created successfully! Please log in below.")
+            return redirect('login')
 
     return render(request, 'signup.html', {'page_title': 'Sign Up – ResumeCraft AI'})
 
@@ -279,31 +316,36 @@ def login_view(request: HttpRequest):
             messages.error(request, "Please enter both your username/email and password.")
             return render(request, 'login.html', {'login_id': login_id, 'next': next_url, 'page_title': 'Log In – ResumeCraft AI'})
 
-        # If login_id contains an '@', resolve username from email
-        auth_username = login_id
-        if '@' in login_id:
-            matched_user = User.objects.filter(email__iexact=login_id).first()
-            if matched_user:
-                auth_username = matched_user.username
+        try:
+            # If login_id contains an '@', resolve username from email
+            auth_username = login_id
+            if '@' in login_id:
+                matched_user = User.objects.filter(email__iexact=login_id).first()
+                if matched_user:
+                    auth_username = matched_user.username
 
-        user = authenticate(request, username=auth_username, password=password)
+            user = authenticate(request, username=auth_username, password=password)
 
-        if user is not None:
-            if not user.is_active:
-                messages.error(request, "This account has been disabled. Please contact support.")
-                return render(request, 'login.html', {'login_id': login_id, 'next': next_url, 'page_title': 'Log In – ResumeCraft AI'})
+            if user is not None:
+                if not user.is_active:
+                    messages.error(request, "This account has been disabled. Please contact support.")
+                    return render(request, 'login.html', {'login_id': login_id, 'next': next_url, 'page_title': 'Log In – ResumeCraft AI'})
 
-            # Handle session duration: 2 weeks if remember_me, browser close otherwise
-            if remember_me:
-                request.session.set_expiry(1209600)  # 14 days
+                # Handle session duration: 2 weeks if remember_me, browser close otherwise
+                if remember_me:
+                    request.session.set_expiry(1209600)  # 14 days
+                else:
+                    request.session.set_expiry(0)  # Session expires on browser close
+
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, f"Welcome back, {user.first_name or user.username}!")
+                return redirect(next_url)
             else:
-                request.session.set_expiry(0)  # Session expires on browser close
-
-            login(request, user)
-            messages.success(request, f"Welcome back, {user.first_name or user.username}!")
-            return redirect(next_url)
-        else:
-            messages.error(request, "Invalid username/email or password. Please verify your credentials.")
+                messages.error(request, "Invalid username/email or password. Please verify your credentials.")
+                return render(request, 'login.html', {'login_id': login_id, 'next': next_url, 'page_title': 'Log In – ResumeCraft AI'})
+        except Exception as exc:
+            logger.error(f"Error during login authentication: {exc}", exc_info=True)
+            messages.error(request, "A database or system error occurred. Please try again.")
             return render(request, 'login.html', {'login_id': login_id, 'next': next_url, 'page_title': 'Log In – ResumeCraft AI'})
 
     return render(request, 'login.html', {'next': next_url, 'page_title': 'Log In – ResumeCraft AI'})

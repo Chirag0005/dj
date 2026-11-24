@@ -93,11 +93,15 @@ WSGI_APPLICATION = 'resumecraft.wsgi.application'
 # ==============================================================================
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
+    is_local_db = 'localhost' in DATABASE_URL or '127.0.0.1' in DATABASE_URL
+    ssl_require = os.getenv('DATABASE_SSL_REQUIRE', str(not is_local_db)).lower() in ('true', '1', 't', 'yes')
+
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=ssl_require,
         )
     }
 else:
@@ -109,6 +113,40 @@ else:
     }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Logging configuration for diagnostic visibility in production and development
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'builder': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # ==============================================================================
 # AUTHENTICATION & PASSWORD VALIDATION

@@ -564,26 +564,69 @@ class UserAuthAndDatabaseTests(TestCase):
         self.assertFalse(User.objects.filter(username='testuser').exists())
 
     def test_user_signup_duplicate_username(self):
-        """Test signup rejects duplicate username."""
+        """Test signup rejects duplicate username (case-insensitive)."""
         response = self.client.post('/signup/', {
             'full_name': 'Duplicate User',
-            'username': 'rohit_sharma',
+            'username': 'ROHIT_SHARMA',
             'email': 'unique@example.com',
             'password': 'Password123!',
             'confirm_password': 'Password123!'
         })
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already taken")
 
     def test_user_signup_duplicate_email(self):
-        """Test signup rejects duplicate email."""
+        """Test signup rejects duplicate email (case-insensitive)."""
         response = self.client.post('/signup/', {
             'full_name': 'Duplicate Email User',
             'username': 'unique_user',
-            'email': 'rohit@example.com',
+            'email': 'ROHIT@EXAMPLE.COM',
             'password': 'Password123!',
             'confirm_password': 'Password123!'
         })
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already exists")
+
+    def test_user_signup_invalid_username_characters(self):
+        """Test signup rejects usernames with illegal characters or spaces."""
+        response = self.client.post('/signup/', {
+            'full_name': 'Invalid Username User',
+            'username': 'invalid user name with spaces',
+            'email': 'valid@example.com',
+            'password': 'Password123!',
+            'confirm_password': 'Password123!'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "letters, numbers")
+
+    @patch('builder.views.User.objects.filter')
+    def test_user_signup_database_error_resilience(self, mock_filter):
+        """Regression test: DatabaseError during signup returns 200 with error alert, NOT HTTP 500."""
+        from django.db import DatabaseError
+        mock_filter.side_effect = DatabaseError("Connection refused by database")
+        response = self.client.post('/signup/', {
+            'full_name': 'Resilience User',
+            'username': 'resilience_user',
+            'email': 'resilience@example.com',
+            'password': 'Password123!',
+            'confirm_password': 'Password123!'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Database connection error")
+
+    @patch('builder.views.User.objects.create_user')
+    def test_user_signup_creation_error_resilience(self, mock_create):
+        """Regression test: Creation exception returns 200 with error message, NOT HTTP 500."""
+        mock_create.side_effect = Exception("Storage disk failure")
+        response = self.client.post('/signup/', {
+            'full_name': 'Resilience User 2',
+            'username': 'resilience_user2',
+            'email': 'resilience2@example.com',
+            'password': 'Password123!',
+            'confirm_password': 'Password123!'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Unable to create account")
 
     def test_login_with_username(self):
         """Test user can log in using their username."""
