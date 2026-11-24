@@ -1,12 +1,15 @@
 # ResumeCraft AI – Build Your Professional Identity
 
-> **An intelligent, ATS-friendly resume builder powered by Django, Google Gemini AI, and client-side browser storage. Zero database dependencies, 100% privacy, and instant PDF generation.**
+> **An intelligent, ATS-friendly resume builder powered by Django, Google Gemini AI, User Authentication, and Dual-Database Storage (SQLite & PostgreSQL).**
 
 ---
 
 ## 📌 Project Overview
 
-**ResumeCraft AI** is a modern, commercial-grade web application engineered to help students, freshers, and professionals create beautiful, ATS-optimized resumes. Built with a clean, database-free architecture, all personal information and resume versions are stored securely inside the user's browser `localStorage`, ensuring complete data privacy and instantaneous responsiveness.
+**ResumeCraft AI** is a modern, commercial-grade SaaS web application engineered to help students, freshers, and professionals create beautiful, ATS-optimized resumes. It features a complete user authentication system and dual-database architecture:
+- **Local Development**: Built-in SQLite (`db.sqlite3`) for instant, zero-setup testing.
+- **Production Deployment**: Cloud PostgreSQL on Render via `dj-database-url` and `psycopg2-binary`.
+- **Hybrid Guest Mode**: Unauthenticated visitors can create resumes stored in browser `localStorage`, with 1-click cloud sync once they register or log in.
 
 The backend leverages **Django** and the official **Google GenAI Python SDK (`google-genai`)** to provide 8 intelligent career copilot tools that enhance resume bullet points, calculate ATS compatibility, suggest relevant technical skills, and analyze job descriptions without ever fabricating information or inventing qualifications.
 
@@ -14,37 +17,45 @@ The backend leverages **Django** and the official **Google GenAI Python SDK (`go
 
 ## ✨ Key Features
 
-### 1. 100% Database-Free & Privacy-Preserving
-- **Strictly No Database**: Operates without SQLite, PostgreSQL, MySQL, MongoDB, or Django ORM models.
-- **Client-Side `localStorage`**: Resumes, autosaves, and edits persist in the user's browser.
-- **Zero Server Storage**: User data is never persisted on backend disks or third-party databases.
-- **Offline / Demo Resilience**: Functions smoothly with intelligent fallback data even if an API key is missing or quota is exhausted.
+### 1. Robust User Authentication & Profile Management
+- **Django Built-in Auth**: Relies on industry-standard Django authentication and secure PBKDF2/SHA-256 password hashing (plain-text passwords are never stored).
+- **Flexible Login**: Sign in using either **Username** or **Email Address**.
+- **Sign Up with Validation**: Duplicate username/email checks, password matching, and Django password complexity rules.
+- **User Profile Dashboard**: View account details, edit full name and email, and change passwords securely.
+- **Session Management**: "Remember Me" support for persistent login sessions and clean logout redirect.
 
-### 2. Live Two-Column Resume Editor
+### 2. Dual Database & Cloud Resume Management
+- **Django ORM & `Resume` Model**: Resumes belong to authenticated users via ForeignKey with automatic timestamp tracking (`created_at`, `updated_at`).
+- **Flexible JSONField Payload**: Preserves dynamic resume sections (personal info, education, experience, projects, skills, certifications, styling) without brittle multi-table schemas.
+- **User Isolation**: Strict server-side ownership checks ensure users can only access, edit, duplicate, or delete their own resumes.
+- **Instant Cloud Sync & Autosave**: Real-time autosaving directly to the database with visual status indicators.
+- **LocalStorage Import**: When a user registers or logs in, any existing resumes created as a guest in browser storage are detected with an optional 1-click cloud import banner.
+
+### 3. Live Two-Column Resume Editor
 - **Real-Time Synchronization**: Keystrokes in input forms immediately update the live A4 resume sheet without page refreshes.
-- **Debounced Autosave**: Changes autosave within 350ms with visual status feedback (*"All changes saved"*).
+- **Debounced Autosave**: Changes autosave within 400ms with visual status feedback (*"Cloud saved"*).
 - **Dynamic Repeaters**: Add, reorder, or remove Education, Experience, Projects, Certifications, and Achievements dynamically.
 - **Automatic Section Hiding**: Blank sections are hidden from the live preview automatically.
 - **Mobile Responsive**: Smooth tab switcher between form input and live preview on tablet and mobile viewports.
 
-### 3. Four Recruiter-Approved Resume Templates
+### 4. Four Recruiter-Approved Resume Templates
 1. **Professional Classic**: Traditional corporate layout with serif/clean sans typography, horizontal dividers, and balanced formal hierarchy.
 2. **Modern Minimal**: Left-aligned modern layout with colored left borders, generous whitespace, and contemporary aesthetics.
 3. **Developer Portfolio**: Tech-forward design featuring code badges, monospace accents, and prominent GitHub/live demo links.
 4. **Student Fresher**: Academic-first layout prioritizing university credentials, coursework, hackathon achievements, and certifications.
 *Templates can be switched at any time without losing any entered data.*
 
-### 4. Custom Styling & Theming
+### 5. Custom Styling & Theming
 - **Accent Color Picker**: 5 pre-configured SaaS colors (Royal Purple, Ocean Blue, Emerald, Crimson, Slate) plus a native HTML5 custom color picker.
 - **Typography Selection**: Inter, Poppins, Roboto, Merriweather, and JetBrains Mono.
 - **Font Sizing**: Small, Regular, and Large.
 - **Section Spacing**: Compact, Normal, and Spacious.
 
-### 5. Pixel-Perfect A4 PDF Export
+### 6. Pixel-Perfect A4 PDF Export
 - Leverages native browser print rendering formatted specifically for international standard A4 paper (`210mm × 297mm`).
 - Zero overlapping elements, high-contrast printing, clean page-break avoidance on section cards, and automatic hiding of all UI toolbars and navigation buttons during printing.
 
-### 6. Eight Integrated Google Gemini AI Features
+### 7. Eight Integrated Google Gemini AI Features
 1. **AI Professional Summary Generator (`/ai/generate-summary/`)**: Synthesizes education, skills, and career focus into a 3-sentence executive summary.
 2. **AI Experience Improver (`/ai/improve-experience/`)**: Rewrites raw bullet points using Google's XYZ action-verb framework without hallucinating numbers or facts.
 3. **AI Project Description Generator (`/ai/project-description/`)**: Highlights system architecture, tech stacks, and engineering methodology.
@@ -61,10 +72,13 @@ The backend leverages **Django** and the official **Google GenAI Python SDK (`go
 | Layer | Technologies |
 | :--- | :--- |
 | **Backend Framework** | Python 3.10+ / 3.14, Django 5.x / 6.x |
+| **Database Engine** | SQLite (local development) / PostgreSQL (production on Render) |
+| **Database Connector** | `dj-database-url` (>=2.1.0), `psycopg2-binary` (>=2.9.9) |
+| **Authentication** | Django built-in Auth (PBKDF2 password hashing, session cookies) |
 | **AI Integration** | Google Gemini API via official `google-genai` Python SDK (`gemini-2.5-flash`) |
 | **Frontend UI** | HTML5, CSS3, Vanilla JavaScript (ES6+), Bootstrap 5.3, Bootstrap Icons |
 | **Typography** | Google Fonts (Inter, Plus Jakarta Sans, JetBrains Mono, Roboto, Merriweather) |
-| **Client Storage** | Browser `localStorage` (JSON serialization) |
+| **Client Storage** | Browser `localStorage` (Guest Mode & local cache fallback) |
 | **Static Delivery** | WhiteNoise 6.x (CompressedStaticFilesStorage) |
 | **Production WSGI** | Gunicorn 23.x / 27.x |
 | **Deployment Target** | Render (`render.yaml`, `build.sh`) |
@@ -75,7 +89,8 @@ The backend leverages **Django** and the official **Google GenAI Python SDK (`go
 
 ### Step 1: Clone or Navigate to the Project Directory
 ```bash
-cd resumecraft
+git clone https://github.com/Chirag0005/dj.git
+cd dj
 ```
 
 ### Step 2: Create and Activate a Virtual Environment
@@ -101,133 +116,53 @@ cp .env.example .env     # On macOS/Linux
 copy .env.example .env   # On Windows
 ```
 
-Edit `.env` and insert your Gemini API Key:
+Edit `.env` to include your free Gemini API key:
 ```env
-SECRET_KEY=your-random-django-secret-key-here
-DEBUG=True
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
+SECRET_KEY=your-django-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+# DATABASE_URL is optional: leave empty for local SQLite, or provide postgres://... for PostgreSQL
 ```
 
-> **How to get a Free Google Gemini API Key:**
-> 1. Visit [Google AI Studio](https://aistudio.google.com/).
-> 2. Sign in with your Google account.
-> 3. Click **"Get API key"** and create a new key.
-> 4. Paste the key into your `.env` file under `GEMINI_API_KEY`.
-> *(Note: The application still runs smoothly in Demo Mode if no key is configured!)*
+### Step 5: Run Database Migrations
+```bash
+python manage.py migrate
+```
 
-### Step 5: Run Automated Tests
+### Step 6: Create Admin Superuser (Optional)
+```bash
+python manage.py createsuperuser
+```
+
+### Step 7: Run Automated Tests (36 Tests)
 ```bash
 python manage.py test
 ```
-All 10 unit tests will pass in milliseconds with zero database connections attempted!
 
-### Step 6: Start the Development Server
+### Step 8: Start the Local Development Server
 ```bash
 python manage.py runserver
 ```
-Open your browser and navigate to: **`http://127.0.0.1:8000/`**
+Visit `http://127.0.0.1:8000/` in your browser.
 
 ---
 
-## 🌐 Render Deployment Guide
+## 🌐 Production Deployment on Render
 
-ResumeCraft AI is configured for one-click deployment on **Render** without requiring any database add-on.
-
-### Files Included for Render:
-- `render.yaml`: Blueprint definition specifying environment, build command, and start command.
-- `build.sh`: Automated build script (`pip install -r requirements.txt && python manage.py collectstatic --no-input`).
-- `requirements.txt`: Python package requirements.
-- `resumecraft/wsgi.py`: WSGI entry point.
-
-### Step-by-Step Render Deployment:
-1. Push your project repository to **GitHub** or **GitLab**.
-2. Log in to [Render Dashboard](https://dashboard.render.com/).
-3. Click **"New +"** and choose **"Web Service"** (or choose **"Blueprint"** to use `render.yaml`).
-4. Connect your Git repository.
-5. Configure the following service settings:
-   - **Environment**: `Python 3`
-   - **Build Command**: `./build.sh`
+1. Create a **Web Service** on Render and connect your GitHub repository (`https://github.com/Chirag0005/dj.git`).
+2. Set the build and start commands:
+   - **Build Command**: `pip install -r requirements.txt && python manage.py migrate --no-input && python manage.py collectstatic --no-input`
    - **Start Command**: `gunicorn resumecraft.wsgi:application`
-6. Add the following **Environment Variables** in Render's dashboard:
-   - `SECRET_KEY`: `<generate-a-strong-secret-key>`
+3. Add Environment Variables in Render Dashboard:
+   - `GEMINI_API_KEY`: Your Google Gemini API Key
+   - `SECRET_KEY`: Random 50-character string
+   - `ALLOWED_HOSTS`: `*`
    - `DEBUG`: `False`
-   - `GEMINI_API_KEY`: `<your-google-gemini-api-key>`
-   - `CSRF_TRUSTED_ORIGINS`: `https://your-service-name.onrender.com`
-7. Click **"Deploy Web Service"**.
-8. Once the build finishes, open your live Render URL!
+   - `DATABASE_URL`: (Optional) Attach a free Render PostgreSQL database URL for persistent cloud storage. If omitted, SQLite operates automatically.
 
 ---
 
-## 📁 Project Structure
-
-```
-resumecraft/
-│
-├── manage.py                   # Django CLI utility
-├── requirements.txt            # Python dependencies (Django, google-genai, whitenoise, gunicorn)
-├── render.yaml                 # Render infrastructure-as-code specification
-├── build.sh                    # Render shell build script
-├── .gitignore                  # Git ignore rules (.env, __pycache__, staticfiles)
-├── .env.example                # Example environment variables template
-├── README.md                   # Complete project documentation
-├── PROJECT_EXPLANATION.md       # Architecture deep-dive & 25 Viva Questions
-│
-├── resumecraft/                # Project Configuration Package
-│   ├── __init__.py
-│   ├── settings.py             # Database-free Django settings (DATABASES = {})
-│   ├── urls.py                 # Root URL configuration
-│   └── wsgi.py                 # WSGI application entry point for Gunicorn
-│
-├── builder/                    # Core Application App
-│   ├── __init__.py
-│   ├── apps.py                 # App configuration
-│   ├── ai_service.py           # Gemini 2.5 SDK integration & 8 AI features
-│   ├── views.py                # Function-based views for pages & AI API endpoints
-│   ├── urls.py                 # Application URL routing
-│   └── tests.py                # Automated tests using SimpleTestCase (Database-free)
-│
-├── templates/                  # Django HTML Templates
-│   ├── base.html               # Base layout, navbar, footer, toast container
-│   ├── index.html              # High-converting SaaS landing page
-│   ├── dashboard.html          # Resumes dashboard (localStorage cards, stats, empty states)
-│   ├── editor.html             # Two-column resume editor with live A4 preview & AI copilot
-│   ├── templates.html          # Templates showcase gallery
-│   └── preview.html            # Standalone print & PDF export preview
-│
-└── static/                     # Static Assets
-    ├── css/
-    │   └── style.css           # Premium SaaS design system, A4 sheet styling, print CSS
-    ├── js/
-    │   ├── storage.js          # Client-side localStorage engine
-    │   ├── editor.js           # Live editor sync, dynamic repeaters, Gemini AI handlers
-    │   └── app.js              # Dashboard manager, toast system, delete/rename modals
-    └── data/
-        └── sample_resumes.json # Pre-loaded B.Tech CSE developer resume example
-```
-
----
-
-## 🔒 Security Best Practices Implemented
-
-- **No Secret Leakage**: The Gemini API key is strictly maintained in the server's environment variable `GEMINI_API_KEY`. It is never delivered to client JavaScript, HTML, CSS, or Git commits.
-- **CSRF Protection**: All AI endpoints (`POST`) require Django's CSRF token (`X-CSRFToken`).
-- **Input Validation & Capping**: Prompts and inputs are truncated to safe bounds (max 4,000 characters) to prevent token abuse and buffer attacks.
-- **Strict Anti-Hallucination Prompts**: System instructions strictly mandate that Gemini rewrite and format *only* the user's factual input and never fabricate metrics, companies, or credentials.
-- **XSS Prevention**: All dynamic HTML rendering in templates and client scripts uses string escaping (`escapeHtml`).
-
----
-
-## ⚠️ Known Limitations & Design Trade-offs
-
-1. **Browser-Specific Storage**: Because resumes persist in `localStorage`, saved resumes do not automatically synchronize across different devices (e.g., from laptop to phone). Users can use the Print / PDF download to transfer their resumes.
-2. **Storage Quotas**: Browser `localStorage` offers approximately 5MB of text storage per domain, which is more than sufficient for hundreds of text resumes but does not support large binary image uploads.
-3. **Private Browsing Mode**: In Incognito/Private tabs, browser `localStorage` is cleared when the window is closed.
-
----
-
-## 🎓 Academic Credit & Demonstration
-
-- **Course**: B.Tech Computer Science & Engineering (Major Project)
-- **Topic**: Full-Stack Web Development, Generative AI Integration, and Client-Side State Architecture.
-- **Evaluation Guide**: Refer to [`PROJECT_EXPLANATION.md`](file:///c:/Users/Dharam%20Pal/OneDrive/Desktop/cra/PROJECT_EXPLANATION.md) for complete technical explanations and 25 viva questions with detailed answers.
+## 📜 License
+MIT License. Built for educational and professional demonstration purposes.

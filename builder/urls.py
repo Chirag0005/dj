@@ -18,6 +18,21 @@ urlpatterns = [
     # Static sample resumes API
     path('api/sample-resumes/', views.sample_resumes_api, name='api_sample_resumes'),
 
+    # User Authentication routes
+    path('signup/', views.signup_view, name='signup'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('profile/', views.profile_view, name='profile'),
+
+    # Database Resume Management API
+    path('api/resumes/save/', views.api_resume_save, name='api_resume_save'),
+    path('api/resumes/delete/', views.api_resume_delete, name='api_resume_delete_post'),
+    path('api/resumes/<int:resume_id>/delete/', views.api_resume_delete, name='api_resume_delete'),
+    path('api/resumes/duplicate/', views.api_resume_duplicate, name='api_resume_duplicate_post'),
+    path('api/resumes/<int:resume_id>/duplicate/', views.api_resume_duplicate, name='api_resume_duplicate'),
+    path('api/resumes/import/', views.api_import_local_resumes, name='api_import_resumes'),
+    path('api/resumes/import-local/', views.api_import_local_resumes, name='api_import_local_resumes'),
+
     # Gemini AI endpoints
     path('ai/generate-summary/', views.ai_generate_summary, name='ai_generate_summary'),
     path('ai/improve-experience/', views.ai_improve_experience, name='ai_improve_experience'),

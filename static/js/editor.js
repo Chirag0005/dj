@@ -36,7 +36,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     let resumeId = urlParams.get('id');
     const initialTemplate = urlParams.get('template');
 
-    if (resumeId) {
+    // 1. Check if server injected resume data exists (authenticated database resume)
+    const serverDataEl = document.getElementById('serverResumeData');
+    if (serverDataEl) {
+        try {
+            currentResume = JSON.parse(serverDataEl.textContent);
+            if (window.currentResumeDbId) {
+                currentResume.id = String(window.currentResumeDbId);
+            }
+        } catch (e) {
+            console.error('Error parsing server resume data', e);
+        }
+    }
+
+    if (!currentResume && resumeId) {
         currentResume = ResumeStorage.get(resumeId);
     }
 
@@ -199,12 +212,50 @@ function triggerAutosave() {
     }
 
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
+    saveTimeout = setTimeout(async () => {
         try {
+            // Keep local storage synchronized as local cache/fallback
             ResumeStorage.save(currentResume);
-            if (statusPill) {
-                statusPill.innerHTML = '<i class="bi bi-check2-circle"></i> All changes saved';
-                statusPill.className = 'save-status-pill saved';
+
+            // If user is authenticated, sync to Django SQLite / PostgreSQL database
+            if (window.isUserAuthenticated) {
+                const csrfToken = getCookie('csrftoken');
+                const resp = await fetch('/api/resumes/save/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify({
+                        id: currentResume.id,
+                        resume_data: currentResume
+                    })
+                });
+                const res = await resp.json();
+                if (res.success) {
+                    if (res.id && (!currentResume.id || String(currentResume.id) !== String(res.id))) {
+                        currentResume.id = String(res.id);
+                        const newUrl = new URL(window.location.href);
+                        newUrl.searchParams.set('id', res.id);
+                        window.history.replaceState({}, '', newUrl.toString());
+                        const backBtn = document.getElementById('btnBackToEditor');
+                        if (backBtn) backBtn.href = '/edit/?id=' + res.id;
+                    }
+                    if (statusPill) {
+                        statusPill.innerHTML = '<i class="bi bi-cloud-check text-success"></i> Cloud saved';
+                        statusPill.className = 'save-status-pill saved';
+                    }
+                } else {
+                    if (statusPill) {
+                        statusPill.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Cloud sync error';
+                        statusPill.className = 'save-status-pill text-warning';
+                    }
+                }
+            } else {
+                if (statusPill) {
+                    statusPill.innerHTML = '<i class="bi bi-check2-circle"></i> All changes saved';
+                    statusPill.className = 'save-status-pill saved';
+                }
             }
             updateCompletionBadge();
         } catch (e) {
@@ -213,7 +264,7 @@ function triggerAutosave() {
                 statusPill.className = 'save-status-pill text-danger';
             }
         }
-    }, 350);
+    }, 400);
 }
 
 function updateCompletionBadge() {

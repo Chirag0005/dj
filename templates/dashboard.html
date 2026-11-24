@@ -9,10 +9,18 @@
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <h2 class="fw-bold mb-0">My Resumes</h2>
-                    <span id="savedResumesCount" class="badge bg-primary-light text-primary">0 Resumes</span>
+                    {% if user.is_authenticated %}
+                        <span id="savedResumesCount" class="badge bg-primary-light text-primary">{{ resume_count }} Resume{{ resume_count|pluralize }}</span>
+                    {% else %}
+                        <span id="savedResumesCount" class="badge bg-primary-light text-primary">0 Resumes</span>
+                    {% endif %}
                 </div>
                 <p class="text-muted small mb-0">
-                    <i class="bi bi-shield-check text-success"></i> Saved securely in your browser's local storage. Private, instant, and database-free.
+                    {% if user.is_authenticated %}
+                        <i class="bi bi-cloud-check text-success"></i> Connected to cloud database as <strong>{{ user.username }}</strong>. Saved securely across all devices.
+                    {% else %}
+                        <i class="bi bi-shield-check text-muted"></i> Guest Mode: Stored in browser storage. <a href="{% url 'login' %}" class="fw-semibold text-primary">Log in</a> or <a href="{% url 'signup' %}" class="fw-semibold text-primary">Create an account</a> to sync permanently.
+                    {% endif %}
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -28,29 +36,157 @@
 </div>
 
 <div class="container pb-5">
-    <!-- Saved Resumes Grid -->
-    <div id="savedResumesGrid" class="row">
-        <!-- Rendered dynamically by app.js from localStorage -->
-    </div>
+    {% if user.is_authenticated %}
+        <!-- LocalStorage to Cloud Import Notification Banner -->
+        <div id="cloudImportBanner" class="alert alert-light border border-primary-subtle shadow-sm mb-4 d-none">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2 bg-primary-light rounded text-primary fs-4">
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Local Browser Resumes Detected</h6>
+                        <p class="small text-muted mb-0">
+                            We found <strong id="localResumesFoundCount">0</strong> resume(s) saved in this browser. Would you like to import them into your cloud account?
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" id="btnDismissImport" class="btn btn-sm btn-outline-secondary" onclick="dismissLocalImport()">
+                        Dismiss
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary-custom" onclick="importLocalResumesToCloud()">
+                        <i class="bi bi-cloud-plus"></i> Import to Cloud
+                    </button>
+                </div>
+            </div>
+        </div>
 
-    <!-- Empty State (Shown when 0 resumes exist in localStorage) -->
-    <div id="dashboardEmptyState" class="empty-state d-none">
-        <div class="empty-state-icon">
-            <i class="bi bi-file-earmark-plus"></i>
+        <!-- Authenticated Cloud Resumes Grid -->
+        {% if resumes %}
+            <div class="row">
+                {% for res in resumes %}
+                <div class="col-md-6 col-lg-4 mb-4" id="resumeCard-{{ res.id }}">
+                    <div class="resume-card">
+                        <div class="resume-card-thumb" onclick="location.href='{% url 'editor' %}?id={{ res.id }}'">
+                            <div class="mini-resume-sheet">
+                                <div class="mini-line accent" style="width: 50%;"></div>
+                                <div class="mini-line" style="width: 80%;"></div>
+                                <div class="mini-line" style="width: 70%; margin-bottom: 6px;"></div>
+                                <div class="mini-line accent" style="width: 40%;"></div>
+                                <div class="mini-line" style="width: 90%;"></div>
+                                <div class="mini-line" style="width: 85%;"></div>
+                                <div class="mini-line" style="width: 60%; margin-bottom: 6px;"></div>
+                                <div class="mini-line accent" style="width: 45%;"></div>
+                                <div class="mini-line" style="width: 75%;"></div>
+                            </div>
+                        </div>
+                        <div class="p-3 d-flex flex-column flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold mb-0 text-truncate" style="max-width: 190px;" title="{{ res.resume_title }}">
+                                    {{ res.resume_title }}
+                                </h6>
+                                <span class="badge bg-light text-dark border">{{ res.selected_template|title }}</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1 small text-muted">
+                                    <span>Completion</span>
+                                    <span><strong>{{ res.completion_score }}%</strong></span>
+                                </div>
+                                <div class="progress progress-thin">
+                                    <div class="progress-bar progress-bar-custom" style="width: {{ res.completion_score }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="small text-muted mb-3">
+                                <i class="bi bi-clock-history"></i> Edited {{ res.updated_at|date:"M d, Y" }}
+                            </div>
+
+                            <div class="mt-auto d-flex justify-content-between align-items-center pt-2 border-top">
+                                <div class="btn-group">
+                                    <a href="{% url 'editor' %}?id={{ res.id }}" class="btn btn-sm btn-primary-custom" title="Edit Resume">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                    <a href="{% url 'preview' %}?id={{ res.id }}" class="btn btn-sm btn-outline-custom" title="Preview & Download">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li>
+                                            <button class="dropdown-item" onclick="promptRenameCloudResume('{{ res.id }}', '{{ res.resume_title|escapejs }}')">
+                                                <i class="bi bi-fonts me-2"></i> Rename
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" onclick="handleDuplicateCloudResume('{{ res.id }}')">
+                                                <i class="bi bi-copy me-2"></i> Duplicate
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" onclick="confirmDeleteCloudResume('{{ res.id }}', '{{ res.resume_title|escapejs }}')">
+                                                <i class="bi bi-trash3 me-2"></i> Delete
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Authenticated Empty State -->
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-cloud-plus"></i>
+                </div>
+                <h4 class="fw-bold mb-2">No Cloud Resumes Yet</h4>
+                <p class="text-muted max-w-500 mx-auto mb-4">
+                    Create your first professional, ATS-optimized resume saved safely in your database account, or load our pre-configured Computer Science student sample.
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{% url 'create_resume' %}" class="btn btn-primary-custom">
+                        <i class="bi bi-plus-lg"></i> Create Resume
+                    </a>
+                    <button type="button" class="btn btn-outline-custom" onclick="loadSampleResumeToDashboard()">
+                        <i class="bi bi-magic"></i> Load CSE Sample
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Guest Mode: Local Storage Resumes Grid -->
+        <div id="savedResumesGrid" class="row">
+            <!-- Rendered dynamically by app.js from localStorage -->
         </div>
-        <h4 class="fw-bold mb-2">No Saved Resumes Yet</h4>
-        <p class="text-muted max-w-500 mx-auto mb-4">
-            Create your first professional, ATS-optimized resume in minutes, or explore our pre-configured Computer Science student sample.
-        </p>
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-            <a href="{% url 'create_resume' %}" class="btn btn-primary-custom">
-                <i class="bi bi-plus-lg"></i> Create Resume
-            </a>
-            <button type="button" class="btn btn-outline-custom" onclick="loadSampleResumeToDashboard()">
-                <i class="bi bi-magic"></i> Load CSE Sample
-            </button>
+
+        <!-- Guest Empty State (Shown when 0 resumes exist in localStorage) -->
+        <div id="dashboardEmptyState" class="empty-state d-none">
+            <div class="empty-state-icon">
+                <i class="bi bi-file-earmark-plus"></i>
+            </div>
+            <h4 class="fw-bold mb-2">No Saved Resumes Yet</h4>
+            <p class="text-muted max-w-500 mx-auto mb-4">
+                Create your first professional, ATS-optimized resume in minutes, or explore our pre-configured Computer Science student sample.
+            </p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{% url 'create_resume' %}" class="btn btn-primary-custom">
+                    <i class="bi bi-plus-lg"></i> Create Resume
+                </a>
+                <button type="button" class="btn btn-outline-custom" onclick="loadSampleResumeToDashboard()">
+                    <i class="bi bi-magic"></i> Load CSE Sample
+                </button>
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <!-- Templates Quick Pick Carousel / Grid -->
     <div class="mt-5 pt-4 border-top">
@@ -110,8 +246,12 @@
                 <div class="p-2 bg-light rounded border text-truncate">
                     <strong id="deleteResumeTitle">Resume Title</strong>
                 </div>
-                <small class="text-muted d-block mt-2">
-                    Note: Since data is stored only in your browser localStorage, deleted resumes cannot be recovered from any server.
+                <small class="text-muted d-block mt-2" id="deleteResumeWarning">
+                    {% if user.is_authenticated %}
+                        This resume will be removed from your cloud database account.
+                    {% else %}
+                        Since data is stored only in your browser localStorage, deleted resumes cannot be recovered from any server.
+                    {% endif %}
                 </small>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -123,4 +263,11 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+window.isUserAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+</script>
+<script src="{% static 'js/app.js' %}"></script>
 {% endblock %}

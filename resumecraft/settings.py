@@ -1,16 +1,13 @@
 """
 Django settings for ResumeCraft AI project.
-
-IMPORTANT ARCHITECTURE NOTE:
-This project is deliberately designed to be 100% DATABASE-FREE.
-- No SQLite, PostgreSQL, MySQL or MongoDB.
-- All user data persists securely in the client's browser localStorage.
-- Django functions strictly as a secure API gateway, template renderer,
-  and static file server.
+Equipped with SQLite (local development) and PostgreSQL (production on Render),
+plus Django Built-in User Authentication and Admin.
 """
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
+from django.contrib.messages import constants as messages
 
 # Load environment variables from .env file if present
 load_dotenv()
@@ -47,21 +44,25 @@ if custom_hosts:
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
-# Deliberately omitting all database-dependent apps:
-# (NO django.contrib.admin, auth, contenttypes, sessions, messages)
 INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
     'django.contrib.staticfiles',
     'builder',
 ]
 
-# Deliberately omitting database-dependent middlewares:
-# (NO SessionMiddleware, AuthenticationMiddleware, MessageMiddleware)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -76,6 +77,8 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
@@ -84,11 +87,62 @@ TEMPLATES = [
 WSGI_APPLICATION = 'resumecraft.wsgi.application'
 
 # ==============================================================================
-# ABSOLUTELY NO DATABASE
-# Empty DATABASES dictionary ensures Django will never attempt to connect,
-# create tables, or perform migrations.
+# DATABASE CONFIGURATION (ENVIRONMENT-AWARE)
+# - Local Development: SQLite (db.sqlite3) automatically when DATABASE_URL is unset.
+# - Production (Render): PostgreSQL automatically when DATABASE_URL is provided.
 # ==============================================================================
-DATABASES = {}
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ==============================================================================
+# AUTHENTICATION & PASSWORD VALIDATION
+# ==============================================================================
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'landing'
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# Bootstrap 5 integration for Django Messages
+MESSAGE_TAGS = {
+    messages.DEBUG: 'secondary',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

@@ -3,9 +3,28 @@
  * ResumeCraft AI - Global Application Controller & Dashboard Manager
  */
 
+// CSRF helper for AJAX requests
+function getCsrfToken() {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === ('csrftoken=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-    // If on Dashboard, render saved resumes
-    if (document.getElementById('savedResumesGrid')) {
+    // If authenticated, check if guest resumes exist in localStorage to offer import
+    if (window.isUserAuthenticated) {
+        checkLocalImportBanner();
+    } else if (document.getElementById('savedResumesGrid')) {
+        // Guest mode: render local storage resumes
         await initDashboard();
     }
 
@@ -16,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ==============================================================================
-// DASHBOARD LOGIC
+// GUEST DASHBOARD LOGIC (LocalStorage)
 // ==============================================================================
 async function initDashboard() {
     // If empty, pre-populate default CSE sample resume for instant wow-factor
@@ -145,9 +164,167 @@ function getTemplateBadgeName(t) {
 }
 
 // ==============================================================================
-// RESUME MANAGEMENT ACTIONS (DELETE, DUPLICATE, RENAME, SAMPLE)
+// LOCAL RESUMES IMPORT TO CLOUD
 // ==============================================================================
+function checkLocalImportBanner() {
+    const banner = document.getElementById('cloudImportBanner');
+    const countEl = document.getElementById('localResumesFoundCount');
+    if (!banner) return;
 
+    if (sessionStorage.getItem('resumecraft_dismiss_import') === 'true') {
+        return;
+    }
+
+    const localResumes = ResumeStorage.getAll();
+    if (localResumes && localResumes.length > 0) {
+        if (countEl) countEl.textContent = localResumes.length;
+        banner.classList.remove('d-none');
+    }
+}
+
+window.dismissLocalImport = function() {
+    const banner = document.getElementById('cloudImportBanner');
+    if (banner) banner.classList.add('d-none');
+    sessionStorage.setItem('resumecraft_dismiss_import', 'true');
+};
+
+window.importLocalResumesToCloud = async function() {
+    const localResumes = ResumeStorage.getAll();
+    if (!localResumes || localResumes.length === 0) {
+        showGlobalToast('No local browser resumes found.', 'primary');
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/resumes/import/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken() || ''
+            },
+            body: JSON.stringify({ resumes: localResumes })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            showGlobalToast(res.message || 'Resumes imported to cloud!', 'success');
+            sessionStorage.setItem('resumecraft_dismiss_import', 'true');
+            const banner = document.getElementById('cloudImportBanner');
+            if (banner) banner.classList.add('d-none');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showGlobalToast(res.message || 'Failed to import resumes.', 'danger');
+        }
+    } catch (e) {
+        showGlobalToast('Network error during import.', 'danger');
+    }
+};
+
+// ==============================================================================
+// CLOUD RESUME ACTIONS (AUTHENTICATED)
+// ==============================================================================
+window.handleDuplicateCloudResume = async function(id) {
+    try {
+        const resp = await fetch('/api/resumes/duplicate/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken() || ''
+            },
+            body: JSON.stringify({ id: id })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            showGlobalToast(res.message || 'Resume duplicated!', 'success');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showGlobalToast(res.message || 'Failed to duplicate resume.', 'danger');
+        }
+    } catch (err) {
+        showGlobalToast('Network error while duplicating.', 'danger');
+    }
+};
+
+window.confirmDeleteCloudResume = function(id, title) {
+    const modalEl = document.getElementById('deleteConfirmModal');
+    const titleEl = document.getElementById('deleteResumeTitle');
+    const deleteBtn = document.getElementById('btnConfirmDelete');
+
+    if (titleEl) titleEl.textContent = title;
+    if (deleteBtn) {
+        deleteBtn.onclick = async () => {
+            try {
+                const resp = await fetch('/api/resumes/delete/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken() || ''
+                    },
+                    body: JSON.stringify({ id: id })
+                });
+                const res = await resp.json();
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                if (res.success) {
+                    showGlobalToast('Resume deleted successfully.', 'success');
+                    const card = document.getElementById(`resumeCard-${id}`);
+                    if (card) {
+                        card.remove();
+                        const countBadge = document.getElementById('savedResumesCount');
+                        if (countBadge) {
+                            const cur = parseInt(countBadge.textContent) || 1;
+                            const nextCount = Math.max(0, cur - 1);
+                            countBadge.textContent = `${nextCount} ${nextCount === 1 ? 'Resume' : 'Resumes'}`;
+                        }
+                    } else {
+                        setTimeout(() => location.reload(), 500);
+                    }
+                } else {
+                    showGlobalToast(res.message || 'Error deleting resume.', 'danger');
+                }
+            } catch (err) {
+                showGlobalToast('Network error while deleting.', 'danger');
+            }
+        };
+    }
+
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+};
+
+window.promptRenameCloudResume = async function(id, currentTitle) {
+    const newTitle = prompt('Enter new resume title:', currentTitle);
+    if (newTitle !== null && newTitle.trim()) {
+        try {
+            const resp = await fetch('/api/resumes/save/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() || ''
+                },
+                body: JSON.stringify({
+                    id: id,
+                    resume_data: { id: id, title: newTitle.trim() }
+                })
+            });
+            const res = await resp.json();
+            if (res.success) {
+                showGlobalToast('Resume renamed!', 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showGlobalToast(res.message || 'Rename failed.', 'danger');
+            }
+        } catch (err) {
+            showGlobalToast('Network error while renaming.', 'danger');
+        }
+    }
+};
+
+// ==============================================================================
+// GUEST RESUME MANAGEMENT ACTIONS (DELETE, DUPLICATE, RENAME, SAMPLE)
+// ==============================================================================
 window.handleDuplicateResume = function(id) {
     const cloned = ResumeStorage.duplicate(id);
     if (cloned) {
@@ -194,11 +371,33 @@ window.loadSampleResumeToDashboard = async function() {
             const json = await resp.json();
             if (json.success && json.data && json.data.sample_developer) {
                 const sample = json.data.sample_developer;
-                sample.id = 'res_' + Date.now();
                 sample.title = 'CS Student / Developer Sample Resume';
-                ResumeStorage.save(sample);
-                showGlobalToast('Sample resume added to your dashboard!', 'success');
-                renderDashboardResumes();
+
+                if (window.isUserAuthenticated) {
+                    const saveResp = await fetch('/api/resumes/save/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken() || ''
+                        },
+                        body: JSON.stringify({
+                            resume_data: sample,
+                            template: sample.template || 'classic'
+                        })
+                    });
+                    const saveJson = await saveResp.json();
+                    if (saveJson.success) {
+                        showGlobalToast('Sample resume added to your cloud account!', 'success');
+                        setTimeout(() => location.reload(), 600);
+                    } else {
+                        showGlobalToast(saveJson.message || 'Could not save sample resume.', 'danger');
+                    }
+                } else {
+                    sample.id = 'res_' + Date.now();
+                    ResumeStorage.save(sample);
+                    showGlobalToast('Sample resume added to your dashboard!', 'success');
+                    renderDashboardResumes();
+                }
             }
         }
     } catch (e) {
@@ -213,7 +412,18 @@ function initStandalonePreview() {
     const urlParams = new URLSearchParams(window.location.search);
     const resumeId = urlParams.get('id');
 
-    let resume = ResumeStorage.get(resumeId);
+    // Check if server injected resume data exists
+    const serverDataEl = document.getElementById('serverResumeData');
+    let resume = null;
+    if (serverDataEl) {
+        try {
+            resume = JSON.parse(serverDataEl.textContent);
+        } catch (e) {}
+    }
+
+    if (!resume && resumeId) {
+        resume = ResumeStorage.get(resumeId);
+    }
     if (!resume) {
         const all = ResumeStorage.getAll();
         resume = all.length > 0 ? all[0] : null;
@@ -224,7 +434,7 @@ function initStandalonePreview() {
             <div class="empty-state">
                 <div class="empty-state-icon"><i class="bi bi-file-earmark-x"></i></div>
                 <h4>No Resume Found</h4>
-                <p class="text-muted">No resume was specified or saved in your browser.</p>
+                <p class="text-muted">No resume was specified or saved in your account.</p>
                 <a href="/dashboard/" class="btn btn-primary-custom mt-2">Go to Dashboard</a>
             </div>
         `;
@@ -239,7 +449,9 @@ function initStandalonePreview() {
     if (!sheet) return;
 
     window.currentResume = resume;
-    renderLivePreview();
+    if (typeof renderLivePreview === 'function') {
+        renderLivePreview();
+    }
 
     // Setup edit link
     const editBtn = document.getElementById('btnBackToEditor');

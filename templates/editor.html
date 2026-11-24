@@ -514,6 +514,15 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{% if server_resume_json %}
+<script id="serverResumeData" type="application/json">
+{{ server_resume_json|safe }}
+</script>
+{% endif %}
+<script>
+window.isUserAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+window.currentResumeDbId = "{{ db_resume.id|default:'' }}";
+</script>
 <!-- Resume Editor & Gemini Controller -->
 <script src="{% static 'js/editor.js' %}"></script>
 {% endblock %}

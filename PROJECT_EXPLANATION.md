@@ -8,34 +8,27 @@
 
 ## Table of Contents
 1. [Executive Summary & Architectural Paradigm](#1-executive-summary--architectural-paradigm)
-2. [Why Database-Free? Architectural Analysis](#2-why-database-free-architectural-analysis)
-3. [Django Backend Architecture](#3-django-backend-architecture)
-   - [Database-Free Settings Configuration](#31-database-free-settings-configuration)
-   - [Function-Based Views & Request Validation](#32-function-based-views--request-validation)
-   - [URL Routing & Dispatch](#33-url-routing--dispatch)
-4. [Google Gemini AI Integration Layer](#4-google-gemini-ai-integration-layer)
-   - [Official Google GenAI SDK (`google-genai`)](#41-official-google-genai-sdk-google-genai)
-   - [Anti-Hallucination Prompt Engineering](#42-anti-hallucination-prompt-engineering)
-   - [Graceful Degradation & Demo Mode](#43-graceful-degradation--demo-mode)
-   - [The 8 Specialized AI Features](#44-the-8-specialized-ai-features)
-5. [Frontend Architecture & Client State Management](#5-frontend-architecture--client-state-management)
-   - [The `localStorage` Engine (`storage.js`)](#51-the-localstorage-engine-storagejs)
-   - [Reactive Live Editor & Two-Way Binding (`editor.js`)](#52-reactive-live-editor--two-way-binding-editorjs)
-   - [Dashboard & UI Controller (`app.js`)](#53-dashboard--ui-controller-appjs)
-   - [Four Distinct Resume Layout Templates](#54-four-distinct-resume-layout-templates)
-6. [High-Fidelity PDF Generation Engine](#6-high-fidelity-pdf-generation-engine)
-7. [Production Deployment on Render](#7-production-deployment-on-render)
-8. [End-to-End Data Flow Diagrams](#8-end-to-end-data-flow-diagrams)
-9. [25 Beginner-Friendly Viva Questions & Comprehensive Answers](#9-25-beginner-friendly-viva-questions--comprehensive-answers)
+2. [Dual-Database Architecture (SQLite & PostgreSQL)](#2-dual-database-architecture-sqlite--postgresql)
+3. [User Authentication & Security Subsystem](#3-user-authentication--security-subsystem)
+4. [Django Models & JSONField Design](#4-django-models--jsonfield-design)
+5. [Django Backend Architecture (Views & APIs)](#5-django-backend-architecture-views--apis)
+6. [Google Gemini AI Integration Layer](#6-google-gemini-ai-integration-layer)
+7. [Frontend Architecture & State Management](#7-frontend-architecture--state-management)
+8. [High-Fidelity PDF Generation Engine](#8-high-fidelity-pdf-generation-engine)
+9. [Production Deployment on Render](#9-production-deployment-on-render)
+10. [End-to-End Data Flow Diagrams](#10-end-to-end-data-flow-diagrams)
+11. [25 Beginner-Friendly Viva Questions & Comprehensive Answers](#11-25-beginner-friendly-viva-questions--comprehensive-answers)
 
 ---
 
 ## 1. Executive Summary & Architectural Paradigm
 
-**ResumeCraft AI** is a production-ready, commercial-grade web application built to solve a critical challenge faced by engineering students and job seekers: crafting modern, ATS-compatible resumes tailored with generative AI, without exposing private career history to untrusted third-party server databases.
+**ResumeCraft AI** is a production-ready web application built to solve a critical challenge faced by engineering students and job seekers: crafting modern, ATS-compatible resumes tailored with generative AI, with secure multi-user authentication, cloud persistence, and high-fidelity PDF export.
 
-The system is organized around a **Hybrid Client-Edge Architecture**:
-- **Client Tier**: Manages persistent state, document serialization, live A4 formatting, and autosaving inside browser `localStorage`.
+The system is organized around a **Hybrid Cloud & Edge Architecture**:
+- **Authentication Tier**: Django built-in auth system with secure PBKDF2/SHA-256 password hashing and session management.
+- **Database Tier**: Dual database support—SQLite locally for zero-config developer setup, and PostgreSQL on Render via `dj-database-url` and `psycopg2-binary`.
+- **Hybrid Guest Mode**: Unauthenticated visitors can create resumes in browser `localStorage`, with 1-click cloud sync once they register.
 - **Backend Tier (Django Gateway)**: Manages secure proxying of Google Gemini AI requests, protects API credentials, verifies CSRF tokens, and delivers compressed static assets via WhiteNoise.
 - **AI Tier (Google GenAI)**: Employs Google's latest `gemini-2.5-flash` model via the official Python SDK to deliver 8 domain-specific career acceleration tools.
 
@@ -43,111 +36,126 @@ The system is organized around a **Hybrid Client-Edge Architecture**:
 +-------------------------------------------------------------+
 |                     CLIENT BROWSER                          |
 |  +--------------------+   +-------------------------------+  |
-|  | HTML5 / CSS3 / JS  |   | localStorage                  |  |
-|  | - Two-Way Binding  |<->| - Saved Resumes JSON          |  |
-|  | - Live A4 Preview  |   | - Active Template & Styles    |  |
+|  | HTML5 / CSS3 / JS  |   | localStorage (Guest Mode)     |  |
+|  | - Two-Way Binding  |<->| - Local Resumes & Cache       |  |
+|  | - Live A4 Preview  |   | - 1-Click Cloud Import        |  |
 |  +---------+----------+   +-------------------------------+  |
 +------------|------------------------------------------------+
-             | Secure AJAX / JSON (CSRF Protected)
+             | Secure AJAX / JSON (CSRF & Session Protected)
              v
 +-------------------------------------------------------------+
 |                     DJANGO BACKEND                          |
-|  - urls.py: Clean Route Dispatch                            |
+|  - urls.py: Clean Route Dispatch & Admin                    |
 |  - views.py: Function-Based Request Handlers                |
+|  - models.py: User (Auth) + Resume (JSONField)              |
 |  - ai_service.py: Google GenAI Python SDK Controller        |
-|  - settings.py: DATABASES = {} (No ORM / Zero Migration)   |
 +------------+------------------------------------------------+
-             | Encrypted TLS / API Key (Server Environment)
-             v
-+-------------------------------------------------------------+
-|                  GOOGLE GEMINI 2.5 FLASH                    |
-|  - Professional Summary  - Experience Optimizer             |
-|  - Project Enhancer      - ATS Compatibility Analysis       |
-|  - Skill Recommender     - Job Description Matcher          |
-+-------------------------------------------------------------+
+             |                              |
+             v                              v
++---------------------------+  +------------------------------+
+|     DATABASE LAYER        |  |   GOOGLE GEMINI 2.5 FLASH    |
+| - SQLite: Local Dev       |  | - Professional Summary       |
+| - PostgreSQL: Render Prod |  | - Experience Optimizer       |
+| - Strictly User-Isolated  |  | - ATS Compatibility Analysis |
++---------------------------+  +------------------------------+
 ```
 
 ---
 
-## 2. Why Database-Free? Architectural Analysis
+## 2. Dual-Database Architecture (SQLite & PostgreSQL)
 
-Traditional web applications employ server-side Relational Database Management Systems (RDBMS) like PostgreSQL or SQLite. While suitable for multi-user transactional data, traditional databases introduce significant drawbacks for a personal resume utility:
-
-1. **User Privacy & Data Ownership**: Storing resumes in a backend database creates a centralized honeypot containing personal emails, phone numbers, home addresses, and educational histories. In ResumeCraft AI, personal data never leaves the user's local machine unless explicitly dispatched to Gemini for text enhancement.
-2. **Zero Maintenance & Operational Overhead**: Without a database, there is no need for schema migrations (`python manage.py migrate`), connection pool management, database backup strategies, deadlock troubleshooting, or disk scaling costs on platforms like Render.
-3. **Instant Latency (0ms Data Fetching)**: Reads and writes occur synchronously in the client's memory and browser storage, eliminating database query network round-trips.
-4. **Permanent Free-Tier Hosting**: Cloud providers often spin down or charge for managed database instances. A database-free Django application can run indefinitely on Render's free compute tier without incurring storage fees.
-
----
-
-## 3. Django Backend Architecture
-
-### 3.1. Database-Free Settings Configuration
-In `resumecraft/settings.py`, Django is configured to operate completely without database drivers:
+In `resumecraft/settings.py`, the database engine adapts dynamically based on whether a `DATABASE_URL` environment variable is defined:
 
 ```python
 # resumecraft/settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
-# 1. Empty DATABASES configuration ensures no DB connections are attempted
-DATABASES = {}
-
-# 2. Deliberately omit database-backed apps:
-# NO django.contrib.admin
-# NO django.contrib.auth
-# NO django.contrib.contenttypes
-# NO django.contrib.sessions
-# NO django.contrib.messages
-INSTALLED_APPS = [
-    'whitenoise.runserver_nostatic',
-    'django.contrib.staticfiles',
-    'builder',
-]
-
-# 3. Deliberately omit database-dependent middleware:
-# NO SessionMiddleware
-# NO AuthenticationMiddleware
-# NO MessageMiddleware
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-```
-
-### 3.2. Function-Based Views & Request Validation
-All endpoints in `builder/views.py` utilize beginner-friendly, clean function-based views (FBVs). They parse incoming JSON payloads, sanitize inputs, enforce request size limits, and return standardized `JsonResponse` objects:
-
-```python
-@require_http_methods(["POST"])
-def ai_generate_summary(request: HttpRequest):
-    payload = parse_json_body(request)
-    education = str(payload.get('education', ''))[:1000]
-    skills = str(payload.get('skills', ''))[:1000]
-    experience = str(payload.get('experience', ''))[:1500]
-    career_goal = str(payload.get('career_goal', ''))[:500]
-
-    result = ai_service.generate_summary(
-        education=education,
-        skills=skills,
-        experience=experience,
-        career_goal=career_goal
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True
     )
-    return JsonResponse(result)
 ```
 
-### 3.3. URL Routing & Dispatch
-All routes are organized cleanly into `builder/urls.py` and included in the root `resumecraft/urls.py`:
-- Page Views: `/`, `/dashboard/`, `/create/`, `/edit/`, `/templates/`, `/preview/`
-- Static Data API: `/api/sample-resumes/`
-- AI Endpoints: `/ai/generate-summary/`, `/ai/improve-experience/`, `/ai/project-description/`, `/ai/skill-suggestions/`, `/ai/ats-analysis/`, `/ai/job-match/`, `/ai/career-objective/`, `/ai/review-resume/`
+### Why this design?
+1. **Zero Setup for Beginners & Evaluators**: Running `python manage.py runserver` immediately works out of the box using SQLite (`db.sqlite3`). No external Docker or database servers are required.
+2. **Production-Ready Scalability**: When deployed to Render, attaching a free Render PostgreSQL database automatically sets `DATABASE_URL`. The application connects to PostgreSQL without altering a single line of application logic.
+3. **Database Migrations**: Managed cleanly via `python manage.py makemigrations` and `python manage.py migrate`.
 
 ---
 
-## 4. Google Gemini AI Integration Layer
+## 3. User Authentication & Security Subsystem
 
-### 4.1. Official Google GenAI SDK (`google-genai`)
+ResumeCraft AI leverages Django's battle-tested built-in authentication system (`django.contrib.auth`):
+
+### 3.1. Sign Up & Password Hashing
+- When a user signs up, Django hashes the password using `PBKDF2PasswordHasher` with SHA-256 and unique salt per user. Plain-text passwords are **never** stored in the database.
+- Enforces duplicate username check, duplicate email check, and Django's `AUTH_PASSWORD_VALIDATORS` (minimum 8 characters, common password check, numeric check).
+
+### 3.2. Flexible Authentication (Username or Email)
+The `login_view` allows users to sign in using either their username OR their registered email address:
+```python
+if '@' in login_id:
+    user_obj = User.objects.filter(email__iexact=login_id).first()
+    auth_username = user_obj.username if user_obj else None
+else:
+    auth_username = login_id
+
+user = authenticate(request, username=auth_username, password=password)
+```
+
+### 3.3. Profile Updates & Secure Password Change
+- Users can update their first name, last name, and email from the `/profile/` dashboard.
+- Password change verifies the user's current password (`user.check_password(old_password)`), runs validation, updates the hash, and invokes `update_session_auth_hash(request, user)` so the user is not unexpectedly logged out.
+
+---
+
+## 4. Django Models & JSONField Design
+
+The application defines a clean, elegant relational model in `builder/models.py`:
+
+```python
+class Resume(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resumes')
+    resume_title = models.CharField(max_length=255, default='My Resume')
+    resume_data = models.JSONField(default=dict, blank=True)
+    selected_template = models.CharField(max_length=50, default='classic')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+```
+
+### Why use `JSONField` for `resume_data`?
+1. **Best of Both Worlds**: Relational foreign-key ownership guarantees strict data security and multi-user isolation, while the schemaless JSON payload allows limitless flexibility for dynamic resume sections (education, experience, certifications, custom colors, font sizes).
+2. **No Brittle Multi-Table Joins**: A traditional schema with 7 separate tables (`Candidate`, `EducationItem`, `ExperienceItem`, `SkillGroup`, etc.) requires complex multi-table joins and cascade deletes. With `JSONField`, the entire resume document is saved, versioned, duplicated, and fetched in a single atomic database query.
+3. **Seamless Client Compatibility**: The frontend JavaScript object maps directly 1:1 with the database JSON document with zero translation friction.
+
+---
+
+## 5. Django Backend Architecture (Views & APIs)
+
+### 5.1. Function-Based Views & Request Handlers
+All endpoints in `builder/views.py` utilize clean function-based views (FBVs):
+- `landing_page`: Renders modern homepage with feature highlights.
+- `dashboard_page`: Displays the user's database resumes when logged in, or local browser resumes in guest mode with an import banner.
+- `editor_page`: Loads database resume by ID with ownership verification (`get_object_or_404(Resume, id=resume_id, user=request.user)`).
+- `signup_view`, `login_view`, `logout_view`, `profile_view`: Complete auth lifecycle.
+- `api_resume_save`: Saves or autosaves resume payload to database.
+- `api_resume_delete`: Deletes cloud resume with ownership verification.
+- `api_resume_duplicate`: Clones existing resume into an independent copy.
+- `api_import_local_resumes`: Bulk-imports browser localStorage resumes into user's database account.
+
+---
+
+## 6. Google Gemini AI Integration Layer
+
+### 6.1. Official Google GenAI SDK (`google-genai`)
 ResumeCraft AI integrates the modern Google GenAI Python SDK (`google-genai`), utilizing the `client.models.generate_content` interface:
 
 ```python
@@ -167,321 +175,208 @@ response = client.models.generate_content(
 )
 ```
 
-### 4.2. Anti-Hallucination Prompt Engineering
-A common failure mode in AI-assisted resume software is hallucination—the AI inventing high-profile companies, fake metric improvements (*"increased revenue by 450%"*), or unearned certifications. 
-
-ResumeCraft AI embeds strict guardrails into its system instructions:
-- **No Metric Inventions**: If metrics are omitted, Gemini outputs bracketed placeholders like `[X%]` or `[measurable impact]` so students can input real figures.
-- **Factual Fidelity**: Only rephrases and formats facts explicitly provided by the user.
-- **Action-Verb Architecture**: Enforces Google's XYZ formula (*"Accomplished [X] as measured by [Y], by doing [Z]"*).
-- **Indicative ATS Scoring**: The ATS scanner explicitly clarifies that its compatibility score is an indicative heuristic simulation rather than a proprietary ATS guarantee.
-
-### 4.3. Graceful Degradation & Demo Mode
-If the user runs the application without configuring a `GEMINI_API_KEY`, or if Google's rate limits are reached, the system **never crashes or returns 500 errors**. Instead, `ai_service.py` returns an intelligent simulated response accompanied by a clear, helpful notice:
-
-> *"DEMO MODE: Running with local intelligent assistant. To enable live Google Gemini 2.5 AI, add your free GEMINI_API_KEY in the .env file."*
-
-This guarantees 100% reliability during college demonstrations and viva exams.
-
-### 4.4. The 8 Specialized AI Features
-1. **Summary Generator**: Crafts a punchy 3-sentence summary emphasizing foundational competence and career direction.
-2. **Experience Optimizer**: Rewrites passive phrases (*"worked on backend"*) into executive statements (*"Architected asynchronous REST endpoints using Django..."*).
-3. **Project Enhancer**: Formulates technical bullets highlighting architecture, tech stacks, and problem-solving.
-4. **Skill Suggestions**: Recommends industry-standard companion tools based on the target career role.
-5. **ATS Scanner**: Evaluates keyword presence, formatting readability, and section completeness against pasted job postings.
-6. **Job Matcher**: Highlights relevant projects to feature at the top of the resume for a given job posting.
-7. **Career Objective**: Calibrates tone specifically for Student, Fresher, or Experienced tiers.
-8. **Resume Audit**: Performs a diagnostic audit evaluating grammar, passive phrasing, and quick wins.
+### 6.2. The 8 Specialized AI Features
+1. **Professional Summary**: 3-sentence executive summary highlighting technical strengths.
+2. **Experience Improver**: Rewrites bullet points using Google's XYZ action-verb framework.
+3. **Project Description**: Details system architecture and technical problem-solving.
+4. **Skill Suggestions**: Recommends missing modern skills by category.
+5. **ATS Compatibility Scanner**: Compares resume text with target job postings, generating dynamic scores, matched keywords, and gap analysis.
+6. **Job Description Matcher**: Pinpoints qualification alignment and tailored project highlights.
+7. **Career Objective Generator**: Tailored specifically for Freshers, Students, or Professionals.
+8. **Resume Audit**: Full diagnostic scan of grammar, tone, balance, and quick-win improvements.
 
 ---
 
-## 5. Frontend Architecture & Client State Management
+## 7. Frontend Architecture & State Management
 
-### 5.1. The `localStorage` Engine (`storage.js`)
-All resume state is managed through the static `ResumeStorage` class:
-- Resumes are serialized as JSON arrays under the key `resumecraft_ai_resumes`.
-- Key methods include `getAll()`, `get(id)`, `save(resume)`, `delete(id)`, `duplicate(id)`, `rename(id, newTitle)`.
-- Includes a completion percentage calculation algorithm that scores completeness from 0% to 100% across all sections.
-
-### 5.2. Reactive Live Editor & Two-Way Binding (`editor.js`)
-- **Event Listeners**: Every `input` and `change` event on the form triggers `syncFormToResumeObject()`, followed by `renderLivePreview()`.
-- **Debounced Autosave**: An asynchronous timer (350ms) triggers `ResumeStorage.save(currentResume)`, updating the header status to *"All changes saved in browser localStorage"*.
-- **Dynamic Repeaters**: Education, Experience, Projects, Certifications, and Achievements can be added or deleted dynamically using DOM manipulation.
-
-### 5.3. Dashboard & UI Controller (`app.js`)
-- Dynamically generates cards on `/dashboard/` showcasing resume title, chosen template, completion progress bar, and last edited date.
-- Manages action menus for Editing, Duplicating, Renaming, and Deleting (with confirmation dialogs).
-- Pre-loads a sample B.Tech CSE developer resume on first visit so the interface is never blank.
-
-### 5.4. Four Distinct Resume Layout Templates
-The A4 resume sheet (`#resumeSheet`) dynamically receives specific CSS classes:
-1. `.template-classic`: Centered formal header, royal purple/accent divider, traditional corporate hierarchy.
-2. `.template-modern`: Left-aligned asymmetrical header, left accent bar on headings, spacious modern layout.
-3. `.template-developer`: Dark terminal-inspired header bar, JetBrains Mono font accents, badge pills for tech stack, repository links.
-4. `.template-fresher`: Academic-first hierarchy placing Education, CGPA badges, and Hackathons above work experience.
+- **Two-Way Binding**: Form input keystrokes immediately update `currentResume` and re-render `#resumeSheet` in real time.
+- **Debounced Cloud Autosave**: 400ms debounce timer sends updates to `/api/resumes/save/` when logged in.
+- **Dynamic Repeaters**: Education, Experience, Projects, Certifications, and Achievements can be dynamically added, edited, or removed.
+- **Sanitized HTML Rendering**: Markdown lists and bold accents from AI responses are converted to clean, safe HTML without raw markdown syntax.
 
 ---
 
-## 6. High-Fidelity PDF Generation Engine
+## 8. High-Fidelity PDF Generation Engine
 
-Instead of relying on heavy server-side rendering libraries (like WeasyPrint, wkhtmltopdf, or Puppeteer which require external C-binaries or headless Chrome), ResumeCraft AI utilizes **Client-Side Native Print-to-PDF**:
-
-```css
-/* static/css/style.css */
-@media print {
-    body, html {
-        background: white !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Completely hide all UI controls */
-    .navbar, footer, .editor-toolbar, .editor-forms-col, 
-    .btn, .modal, .toast-container-custom, .no-print {
-        display: none !important;
-    }
-
-    .resume-sheet {
-        width: 100% !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .resume-section {
-        page-break-inside: avoid;
-    }
-
-    @page {
-        size: A4 portrait;
-        margin: 12mm 15mm;
-    }
-}
-```
-
-### Advantages of This Approach:
-- **Zero Server Resource Usage**: PDF rasterization and vector rendering are executed by the user's browser rendering engine (Chromium, WebKit, or Gecko).
-- **Exact A4 Dimensions**: Matches international standard A4 (`210mm × 297mm`) exactly.
-- **Selectable & Clickable Links**: Hyperlinks to GitHub, LinkedIn, and portfolios remain clickable in the generated PDF.
-- **Crisp Vector Typography**: Fonts and text render as vector paths, ensuring infinite zoom without pixelation.
+PDF generation uses native client-side printing (`window.print()`) with specialized `@media print` rules:
+- Paper format: Exact international A4 (`210mm × 297mm`) with `margin: 10mm`.
+- Clean output: All navigation bars, toolbars, and modal elements are hidden during print via `.no-print`.
+- Page-break controls: `page-break-inside: avoid;` prevents awkward splitting of experience and project cards across pages.
 
 ---
 
-## 7. Production Deployment on Render
+## 9. Production Deployment on Render
 
-The repository is configured for automated deployment on **Render**:
-1. `render.yaml`: Infrastructure-as-code specification:
-   - Runtime: Python 3
-   - Build Command: `./build.sh`
-   - Start Command: `gunicorn resumecraft.wsgi:application`
-2. `build.sh`: Automatically runs `pip install -r requirements.txt` and `python manage.py collectstatic --no-input`.
-3. `whitenoise`: Configured in `settings.py` to serve and compress static CSS and JavaScript assets directly through Gunicorn with high cache efficiency.
-
----
-
-## 8. End-to-End Data Flow Diagrams
-
-### Data Flow 1: Live Form Editing & Autosave
+Render runs `build.sh`:
+```bash
+#!/usr/bin/env bash
+set -o errexit
+pip install -r requirements.txt
+python manage.py migrate --no-input
+python manage.py collectstatic --no-input
 ```
-User types in Input Field (e.g., Full Name)
-         │
-         ▼ (input event)
-syncFormToResumeObject()
-         │
-         ├────────────────────────────────────────┐
-         ▼                                        ▼
-renderLivePreview()                     triggerAutosave() (debounced 350ms)
-Updates DOM in #resumeSheet immediately            │
-(A4 dimensions, styling, no reload)               ▼
-                                        ResumeStorage.save(currentResume)
-                                        Saves JSON in browser localStorage
-                                        Updates status: "All changes saved"
-```
-
-### Data Flow 2: AI Assistance Execution
-```
-User clicks "✨ AI Generate Summary"
-         │
-         ▼
-editor.js extracts (education, skills, career goal)
-         │
-         ▼ (HTTP POST with X-CSRFToken header)
-Django Endpoint: /ai/generate-summary/
-         │
-         ▼
-views.py validates input size & sanitizes text
-         │
-         ▼
-ai_service.py calls Google GenAI SDK (gemini-2.5-flash)
-         │
-         ▼ (Encrypted TLS API Call)
-Google Gemini API evaluates prompt with strict system instructions
-         │
-         ▼ (Returns generated text)
-Django views.py returns JsonResponse({'success': True, 'summary': ...})
-         │
-         ▼
-editor.js displays formatted summary in AI modal
-         │
-         ▼ User clicks "Use This Summary"
-Summary is inserted into form input and reflected in live preview!
+And starts the WSGI application with Gunicorn:
+```bash
+gunicorn resumecraft.wsgi:application
 ```
 
 ---
 
-## 9. 25 Beginner-Friendly Viva Questions & Comprehensive Answers
+## 10. End-to-End Data Flow Diagrams
 
-### Question 1: What is ResumeCraft AI, and what problem does it solve?
-**Answer:** ResumeCraft AI is a database-free web application built with Django, Google Gemini AI, and vanilla JavaScript. It solves the challenge of creating professional, ATS-optimized resumes while ensuring 100% data privacy by storing all user resumes exclusively inside the browser's `localStorage` rather than a server database.
+### Authentication & Cloud Resume Save Flow:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Browser as Browser Client
+    participant Django as Django Gateway
+    participant DB as SQLite / PostgreSQL
+    participant AI as Gemini 2.5 Flash
 
----
-
-### Question 2: Why does this Django project operate without any database?
-**Answer:** A resume builder does not require multi-user transactional records or shared server state. Storing resumes in the browser's `localStorage` provides three major benefits:
-1. Complete privacy: Personal emails, phone numbers, and career data are never stored on a server.
-2. Zero latency: Resumes load and save in 0 milliseconds without database queries.
-3. Zero maintenance & hosting costs: The app can run on Render's free tier without paid database add-ons or migration overhead.
-
----
-
-### Question 3: How is Django configured to run without a database?
-**Answer:** In `settings.py`:
-1. `DATABASES = {}` is left empty.
-2. Database-dependent apps (`django.contrib.admin`, `auth`, `contenttypes`, `sessions`, `messages`) are removed from `INSTALLED_APPS`.
-3. Database-dependent middleware (`SessionMiddleware`, `AuthenticationMiddleware`) are removed from `MIDDLEWARE`.
-4. The `builder` app contains no `models.py`.
-
----
-
-### Question 4: What is `localStorage`, and what are its limits?
-**Answer:** `localStorage` is a client-side Web Storage API that allows websites to store key-value string pairs persistently in the user's browser across sessions. Its limits are:
-- Capacity: Typically 5MB per origin (domain), which is more than enough for hundreds of text resumes.
-- Scope: It is origin-bound and browser-bound (data in Chrome does not sync automatically to Firefox or to a mobile device).
+    User->>Browser: Fill resume form & click AI Copilot
+    Browser->>Django: POST /ai/improve-experience/
+    Django->>AI: generate_content(model="gemini-2.5-flash")
+    AI-->>Django: Improved Action-Verb Text
+    Django-->>Browser: JSON response (Clean Text)
+    Browser->>Browser: Update DOM Preview
+    Browser->>Django: POST /api/resumes/save/ (JSON payload)
+    Django->>DB: Resume.objects.filter(id=ID, user=request.user).update()
+    DB-->>Django: Success
+    Django-->>Browser: JSON {success: true, id: ID}
+    Browser-->>User: "Cloud saved" status indicator
+```
 
 ---
 
-### Question 5: Which Google Gemini SDK and model are used in this project?
-**Answer:** The project uses the official Google GenAI Python SDK (`google-genai`) with the `gemini-2.5-flash` model (and graceful fallbacks to `gemini-2.0-flash` / `gemini-1.5-flash`).
+## 11. 25 Beginner-Friendly Viva Questions & Comprehensive Answers
+
+### Question 1: What database does ResumeCraft AI use?
+**Answer:** ResumeCraft AI uses a dual-database architecture: **SQLite** for local development (which requires zero setup and creates `db.sqlite3` automatically), and **PostgreSQL** in production on Render via `dj-database-url` and `psycopg2-binary`.
 
 ---
 
-### Question 6: How is the Gemini API key kept secure?
-**Answer:** The API key is stored strictly as an environment variable (`GEMINI_API_KEY`) on the server. Client-side JavaScript makes AJAX requests to Django backend endpoints (`/ai/...`), which securely call Gemini. The API key is never exposed in HTML, CSS, JavaScript, network responses, or client code.
+### Question 2: What is Django ORM and what are its benefits?
+**Answer:** ORM stands for Object-Relational Mapping. It allows developers to interact with database tables using Python classes (`Resume.objects.filter()`) instead of writing raw SQL queries. This provides database independence, built-in SQL injection protection, and automatic schema migrations.
 
 ---
 
-### Question 7: How does the application handle missing API keys or API rate limits?
-**Answer:** In `ai_service.py`, if `GEMINI_API_KEY` is missing or an error/rate limit occurs, the application catches the exception gracefully and returns an intelligent fallback response along with an informative notice. The application never crashes or returns a 500 server error.
+### Question 3: Why did you use `JSONField` for `resume_data` instead of multiple separate tables?
+**Answer:** Resumes are semi-structured documents with varied sections (education, projects, certifications, styling options). Using `JSONField` provides strict user ownership via ForeignKey while allowing flexible, dynamic resume structures without complex multi-table joins or constant schema migrations whenever a new resume field is introduced.
 
 ---
 
-### Question 8: What are the 8 Gemini AI features implemented in ResumeCraft AI?
+### Question 4: How does user authentication work in this project?
+**Answer:** It uses Django's built-in `django.contrib.auth` system. Passwords are never stored in plain text; instead, they are hashed using the PBKDF2 algorithm with SHA-256 and salt. Sessions are tracked via secure HTTP cookies.
+
+---
+
+### Question 5: How does the application allow users to log in using either username OR email?
+**Answer:** In `login_view`, the input is inspected. If it contains an `@` symbol, the system queries `User.objects.filter(email__iexact=login_id).first()` to retrieve the corresponding username, and then passes that username and password to Django's `authenticate()` method.
+
+---
+
+### Question 6: What happens if a user starts building a resume as a guest without logging in?
+**Answer:** In Guest Mode, resumes are saved in the browser's `localStorage`. When the user later creates an account or logs in, the dashboard automatically detects local resumes and displays a 1-click banner offering to import them into their cloud database account.
+
+---
+
+### Question 7: How is user data isolated so User A cannot view or edit User B's resumes?
+**Answer:** Every database query in `views.py` strictly filters by the authenticated user using `user=request.user` (e.g. `get_object_or_404(Resume, id=resume_id, user=request.user)`). If User B attempts to access User A's resume ID, the server raises an HTTP 404 Not Found error.
+
+---
+
+### Question 8: Which Google Gemini SDK does this project use?
+**Answer:** The project uses the official, modern Google GenAI Python SDK (`google-genai`), using the `client.models.generate_content` interface with the `gemini-2.5-flash` model.
+
+---
+
+### Question 9: How does the ATS Resume Analyzer calculate its score?
+**Answer:** The ATS scanner extracts keywords and requirements from the job description and compares them against normalized text from all resume sections. It computes a weighted score based on technical skills (40%), experience relevance (25%), education (15%), project relevance (10%), and resume formatting (10%).
+
+---
+
+### Question 10: How does the PDF download work without external libraries?
+**Answer:** It uses native browser print rendering (`window.print()`) combined with CSS `@media print` rules. The stylesheet enforces A4 dimensions (`210mm × 297mm`), hides navigation toolbars with `.no-print`, and prevents awkward page breaks with `page-break-inside: avoid`.
+
+---
+
+### Question 11: What is the purpose of WhiteNoise?
+**Answer:** WhiteNoise allows Django to serve its own static files (CSS, JS, images, fonts) directly through Gunicorn in production, eliminating the need for Nginx or an external S3 bucket.
+
+---
+
+### Question 12: How are passwords protected during password change?
+**Answer:** In `profile_view`, the view calls `user.check_password(old_password)` to verify the current password, validates the new password against Django's complexity validators, hashes the new password with `user.set_password(new_password)`, and calls `update_session_auth_hash(request, user)` so the active session remains authenticated.
+
+---
+
+### Question 13: What is debounced autosave?
+**Answer:** Debouncing delays execution until the user has stopped typing for a brief period (e.g., 400ms). Instead of sending an HTTP request on every single keystroke, it waits until the user pauses, dramatically reducing server load and network traffic.
+
+---
+
+### Question 14: What is CSRF and how is it handled in AJAX requests?
+**Answer:** CSRF (Cross-Site Request Forgery) prevents unauthorized commands from being transmitted from a malicious website. In ResumeCraft AI, Django sets a `csrftoken` cookie, and client-side JavaScript reads this token using `getCookie('csrftoken')` and passes it in the `X-CSRFToken` header of all POST requests.
+
+---
+
+### Question 15: What are the four resume templates available?
 **Answer:**
-1. AI Professional Summary Generator
-2. AI Experience Improver (Action-verb rewriting)
-3. AI Project Description Generator
-4. AI In-Demand Skill Suggestions
-5. Simulated ATS Resume Analyzer
-6. AI Job Description Matcher
-7. AI Career Objective Generator (Student, Fresher, Experienced)
-8. Full Resume Diagnostic Review (Audit)
+1. **Professional Classic**: Traditional corporate layout with formal dividers and serif/sans hierarchy.
+2. **Modern Minimal**: Contemporary design with colored left border accents and spacious typography.
+3. **Developer Portfolio**: Tech-focused layout with monospace accents, tech stack pills, and GitHub links.
+4. **Student Fresher**: Academic-first layout prioritizing degree credentials, coursework, and college projects.
 
 ---
 
-### Question 9: What is ATS, and how does the ATS Resume Analyzer feature work?
-**Answer:** ATS stands for Applicant Tracking System, software used by recruiters to filter resumes based on keywords and formatting. Our ATS Analyzer simulates this by extracting keywords from a pasted job description, comparing them with the candidate's resume, and outputting an indicative score, matched keywords, missing keywords, and formatting warnings.
+### Question 16: Does switching templates cause data loss?
+**Answer:** No. Presentation and data are decoupled. The resume content is stored in a structured JSON object; switching templates simply changes the CSS layout class on `#resumeSheet` and re-renders the DOM.
 
 ---
 
-### Question 10: How does the AI ensure it doesn't "hallucinate" fake qualifications?
-**Answer:** Through strict system prompt engineering. The system instructions mandate:
-1. Never invent credentials, companies, or tools not specified by the user.
-2. Never invent numbers or metrics—use placeholders like `[X%]` so the candidate can provide authentic numbers.
-3. Improve phrasing and verbs while strictly preserving facts.
+### Question 17: How is XSS (Cross-Site Scripting) prevented?
+**Answer:** In JavaScript, user inputs are sanitized with `escapeHtml()`, and in Django templates, Django's auto-escaping is active by default, ensuring all text strings are escaped before insertion into the DOM.
 
 ---
 
-### Question 11: What is the purpose of WhiteNoise in this project?
-**Answer:** WhiteNoise allows a Python web application to serve its own static files (CSS, JS, fonts) directly via Gunicorn in production, without requiring a separate web server like Nginx or an Amazon S3 bucket.
+### Question 18: What is Gunicorn and why is it used on Render?
+**Answer:** Gunicorn (Green Unicorn) is a production WSGI HTTP server for Python. It manages multiple worker processes to concurrently handle incoming requests in production.
 
 ---
 
-### Question 12: How does the live resume preview update instantly without page refreshes?
-**Answer:** In `editor.js`, an `input` event listener is attached to the form container. Every keystroke triggers `syncFormToResumeObject()`, which extracts the updated form values and immediately calls `renderLivePreview()`, rewriting the DOM elements of `#resumeSheet` in real time.
+### Question 19: What is `build.sh` on Render?
+**Answer:** `build.sh` is the automated deployment script that executes `pip install -r requirements.txt`, runs database migrations with `python manage.py migrate --no-input`, and collects static files with `python manage.py collectstatic --no-input`.
 
 ---
 
-### Question 13: What is "debounced autosave" and why is it used?
-**Answer:** Debouncing delays the execution of a function until a certain amount of time has passed since it was last called. Instead of writing to `localStorage` on every single keystroke (which could degrade performance), a 350ms debounce timer waits until the user pauses typing before saving.
+### Question 20: What are Django migrations?
+**Answer:** Migrations are Django's way of propagating changes made to Python models (such as creating the `Resume` model) into the database schema. They ensure the database tables stay synchronized with the model definitions.
 
 ---
 
-### Question 14: How does PDF generation work in ResumeCraft AI?
-**Answer:** It uses client-side native print-to-PDF (`window.print()`) combined with CSS `@media print` rules. The print stylesheet hides all UI toolbars, buttons, and navigation, ensures exact A4 proportions (`210mm × 297mm`), avoids page breaks inside resume sections, and produces high-resolution vector PDF files.
+### Question 21: How does the application handle Gemini API failures gracefully?
+**Answer:** All AI calls in `ai_service.py` are wrapped in `try...except` blocks. If an API key is missing or quota is exhausted, the application falls back to intelligent domain-specific sample suggestions and informs the user rather than throwing a 500 error.
 
 ---
 
-### Question 15: What are the four resume templates available in the application?
+### Question 22: How can an administrator manage users and resumes?
+**Answer:** By running `python manage.py createsuperuser`, an administrator account is created. The admin can log in at `/admin/` to view, search, filter, and manage all registered users and resume records.
+
+---
+
+### Question 23: How does the application support responsive design on mobile phones?
+**Answer:** It uses Bootstrap 5 responsive grid layouts, collapsible mobile navigation, and a dedicated mobile tab switcher (`#tabBtnEditor` vs `#tabBtnPreview`) allowing users to easily toggle between form input and live A4 preview on screens under 992px.
+
+---
+
+### Question 24: How does the resume completion percentage get calculated?
+**Answer:** The `completion_score` property in the `Resume` model evaluates filled sections: Full Name (15%), Email (10%), Title (10%), Summary (15%), Education (15%), Experience (15%), Projects (10%), and Skills (10%), producing an indicative progress score between 20% and 100%.
+
+---
+
+### Question 25: What are the key advantages of this project for a college B.Tech CSE presentation?
 **Answer:**
-1. **Professional Classic**: Traditional corporate layout with serif/clean sans typography and formal dividers.
-2. **Modern Minimal**: Contemporary left-aligned layout with left-border accents and generous whitespace.
-3. **Developer Portfolio**: Tech-focused layout with monospace accents, tech badges, and GitHub links.
-4. **Student Fresher**: Academic-first layout highlighting education, CGPA, coursework, and projects.
-
----
-
-### Question 16: What happens when a user switches templates? Does data get lost?
-**Answer:** No data is lost. In `ResumeCraft AI`, resume data and presentation are completely decoupled. The resume content exists in a single JavaScript object; changing the template simply changes the CSS class on `#resumeSheet` and re-renders the DOM with the new layout rules.
-
----
-
-### Question 17: What is CSRF, and how is it handled in this database-free project?
-**Answer:** CSRF stands for Cross-Site Request Forgery. Django provides built-in CSRF protection via the `CsrfViewMiddleware`. Even without database sessions, Django issues a signed CSRF cookie (`csrftoken`). In `editor.js`, the JavaScript `getCookie('csrftoken')` function extracts this cookie and sends it in the `X-CSRFToken` HTTP header on all POST requests.
-
----
-
-### Question 18: What is Gunicorn and what role does it play on Render?
-**Answer:** Gunicorn (Green Unicorn) is a Python WSGI HTTP server for UNIX environments. It sits between the incoming web requests and Django's `resumecraft.wsgi:application`, running multiple worker processes to handle concurrent user requests efficiently.
-
----
-
-### Question 19: Why are function-based views (FBVs) used instead of class-based views (CBVs)?
-**Answer:** Function-based views are straightforward, explicit, and easy for beginners to understand. Each view is a simple Python function that takes an `HttpRequest` object and returns an `HttpResponse` or `JsonResponse`, making the execution flow clear during project demonstrations.
-
----
-
-### Question 20: How does the resume completion percentage get calculated?
-**Answer:** The `ResumeStorage.calculateCompletion(resume)` method checks for the presence and length of required sections: Full Name (15%), Professional Title (10%), Email (10%), Phone (5%), Summary (15%), Links (5%), Education (15%), Experience (10%), Projects (10%), and Skills (10%), summing up to a maximum score of 100%.
-
----
-
-### Question 21: How does the application handle dynamic lists of items like projects or education?
-**Answer:** In `editor.js`, dynamic repeaters maintain an array of objects (e.g., `currentResume.education = [...]`). Functions like `addEducation()` push a new empty object, re-render the repeater input cards, and update the live preview. Functions like `deleteEducation(index)` splice the array and trigger an autosave.
-
----
-
-### Question 22: What is the purpose of `build.sh` during Render deployment?
-**Answer:** `build.sh` is the shell script executed by Render during deployment. It runs `pip install -r requirements.txt` to install all Python packages and `python manage.py collectstatic --no-input` to gather all static CSS and JS files into the `staticfiles/` folder for WhiteNoise.
-
----
-
-### Question 23: How are XSS (Cross-Site Scripting) attacks prevented in the frontend?
-**Answer:** All user-supplied text strings are passed through the `escapeHtml(str)` utility function before being injected into HTML templates or dynamic DOM previews. This converts characters like `<`, `>`, `&`, and `"` into HTML entities, preventing malicious script injection.
-
----
-
-### Question 24: How does the application support mobile devices?
-**Answer:**
-1. Bootstrap 5 responsive grid layout (`col-lg-6`, `col-12`).
-2. A mobile tab switcher (`#tabBtnEditor` vs `#tabBtnPreview`) that toggles between form editing and live preview on screens smaller than 992px.
-3. Collapsible Bootstrap navigation menu.
-
----
-
-### Question 25: What are the main limitations of this architecture, and how would you enhance it in the future?
-**Answer:**
-- **Limitation**: Resumes do not automatically sync across different devices because storage is local to each browser.
-- **Future Enhancements**:
-  1. Add an optional export/import feature for JSON backup files.
-  2. Implement client-side PDF export directly via `html2pdf.js` for one-click file saving without opening the print dialog.
-  3. Offer optional end-to-end encrypted cloud backup using WebCrypto API keys.
+1. It combines full-stack web engineering (Django, PostgreSQL, ORM, Auth, Bootstrap) with modern Generative AI (Gemini 2.5 Flash SDK).
+2. The code is written with clean, understandable function-based views that are easy to explain during a viva exam.
+3. It solves a real-world student problem (building ATS-optimized resumes) with production deployment on Render.

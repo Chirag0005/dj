@@ -508,3 +508,268 @@ class ResumeCraftEndpointTests(SimpleTestCase):
         self.assertNotIn("**", summary)
         self.assertNotIn("Professional Summary:", summary)
         self.assertIn("Motivated Full Stack Developer", summary)
+
+
+from django.test import TestCase
+from django.contrib.auth.models import User
+from builder.models import Resume
+
+
+class UserAuthAndDatabaseTests(TestCase):
+    """Automated integration tests for Database, Authentication, and Cloud Resumes."""
+
+    def setUp(self):
+        self.user1 = User.objects.create_user(
+            username='rohit_sharma',
+            email='rohit@example.com',
+            password='SecurePassword123!',
+            first_name='Rohit',
+            last_name='Sharma'
+        )
+        self.user2 = User.objects.create_user(
+            username='virat_kohli',
+            email='virat@example.com',
+            password='SecurePassword456!',
+            first_name='Virat',
+            last_name='Kohli'
+        )
+
+    def test_user_signup_success(self):
+        """Test successful registration of new user with hashed password."""
+        response = self.client.post('/signup/', {
+            'full_name': 'Jasprit Bumrah',
+            'username': 'jbumrah',
+            'email': 'jasprit@example.com',
+            'password': 'SpeedyYorker99!',
+            'confirm_password': 'SpeedyYorker99!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/dashboard/')
+        user = User.objects.get(username='jbumrah')
+        self.assertEqual(user.first_name, 'Jasprit')
+        self.assertEqual(user.last_name, 'Bumrah')
+        self.assertTrue(user.check_password('SpeedyYorker99!'))
+        self.assertNotEqual(user.password, 'SpeedyYorker99!')  # Password must be hashed
+
+    def test_user_signup_password_mismatch(self):
+        """Test signup fails when passwords do not match."""
+        response = self.client.post('/signup/', {
+            'full_name': 'Test User',
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'Password123!',
+            'confirm_password': 'DifferentPassword123!'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username='testuser').exists())
+
+    def test_user_signup_duplicate_username(self):
+        """Test signup rejects duplicate username."""
+        response = self.client.post('/signup/', {
+            'full_name': 'Duplicate User',
+            'username': 'rohit_sharma',
+            'email': 'unique@example.com',
+            'password': 'Password123!',
+            'confirm_password': 'Password123!'
+        })
+        self.assertEqual(response.status_code, 200)
+
+    def test_user_signup_duplicate_email(self):
+        """Test signup rejects duplicate email."""
+        response = self.client.post('/signup/', {
+            'full_name': 'Duplicate Email User',
+            'username': 'unique_user',
+            'email': 'rohit@example.com',
+            'password': 'Password123!',
+            'confirm_password': 'Password123!'
+        })
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_with_username(self):
+        """Test user can log in using their username."""
+        response = self.client.post('/login/', {
+            'login_id': 'rohit_sharma',
+            'password': 'SecurePassword123!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/dashboard/')
+        self.assertTrue('_auth_user_id' in self.client.session)
+
+    def test_login_with_email(self):
+        """Test user can log in using their email address."""
+        response = self.client.post('/login/', {
+            'login_id': 'rohit@example.com',
+            'password': 'SecurePassword123!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/dashboard/')
+        self.assertTrue('_auth_user_id' in self.client.session)
+
+    def test_login_invalid_password(self):
+        """Test login fails with incorrect password."""
+        response = self.client.post('/login/', {
+            'login_id': 'rohit_sharma',
+            'password': 'WrongPassword123!'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse('_auth_user_id' in self.client.session)
+
+    def test_user_logout(self):
+        """Test logout clears session."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        response = self.client.get('/logout/')
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse('_auth_user_id' in self.client.session)
+
+    def test_profile_update(self):
+        """Test user profile update (name and email)."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        response = self.client.post('/profile/', {
+            'action': 'update_profile',
+            'full_name': 'Rohit G. Sharma',
+            'email': 'rohit.updated@example.com'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.user1.refresh_from_db()
+        self.assertEqual(self.user1.first_name, 'Rohit')
+        self.assertEqual(self.user1.last_name, 'G. Sharma')
+        self.assertEqual(self.user1.email, 'rohit.updated@example.com')
+
+    def test_password_change(self):
+        """Test secure password change."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        response = self.client.post('/profile/', {
+            'action': 'change_password',
+            'current_password': 'SecurePassword123!',
+            'new_password': 'BrandNewPassword789!',
+            'confirm_password': 'BrandNewPassword789!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.user1.refresh_from_db()
+        self.assertTrue(self.user1.check_password('BrandNewPassword789!'))
+        self.assertFalse(self.user1.check_password('SecurePassword123!'))
+
+    def test_resume_save_and_update_api(self):
+        """Test saving and autosaving resume to database."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        # Save new resume
+        response = self.client.post('/api/resumes/save/', data={
+            'resume_data': {
+                'title': 'Full Stack Resume',
+                'template': 'modern',
+                'personal': {'fullName': 'Rohit Sharma', 'email': 'rohit@example.com'},
+                'education': [{'degree': 'B.Tech CSE', 'institution': 'IIT'}],
+            }
+        }, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get('success'))
+        resume_id = data.get('id')
+        self.assertIsNotNone(resume_id)
+
+        # Verify DB object
+        resume = Resume.objects.get(id=resume_id, user=self.user1)
+        self.assertEqual(resume.resume_title, 'Full Stack Resume')
+        self.assertEqual(resume.selected_template, 'modern')
+
+        # Update existing resume
+        response2 = self.client.post('/api/resumes/save/', data={
+            'id': resume_id,
+            'resume_data': {
+                'id': resume_id,
+                'title': 'Senior Full Stack Resume',
+                'template': 'developer',
+                'personal': {'fullName': 'Rohit Sharma', 'email': 'rohit@example.com'},
+            }
+        }, content_type='application/json')
+        self.assertEqual(response2.status_code, 200)
+        resume.refresh_from_db()
+        self.assertEqual(resume.resume_title, 'Senior Full Stack Resume')
+        self.assertEqual(resume.selected_template, 'developer')
+
+    def test_resume_isolation_between_users(self):
+        """Verify User B cannot access, modify, or delete User A's resume."""
+        resume = Resume.objects.create(
+            user=self.user1,
+            resume_title="User 1 Confidential Resume",
+            selected_template="classic",
+            resume_data={'personal': {'fullName': 'Rohit Sharma'}}
+        )
+
+        # Log in as User 2
+        self.client.login(username='virat_kohli', password='SecurePassword456!')
+
+        # Attempt to delete User 1's resume
+        del_resp = self.client.post('/api/resumes/delete/', data={'id': resume.id}, content_type='application/json')
+        self.assertEqual(del_resp.status_code, 404)
+        self.assertTrue(Resume.objects.filter(id=resume.id).exists())
+
+        # Attempt to duplicate User 1's resume
+        dup_resp = self.client.post('/api/resumes/duplicate/', data={'id': resume.id}, content_type='application/json')
+        self.assertEqual(dup_resp.status_code, 404)
+
+        # Attempt to overwrite User 1's resume
+        edit_resp = self.client.post('/api/resumes/save/', data={
+            'id': resume.id,
+            'resume_data': {'title': 'Hacked Title'}
+        }, content_type='application/json')
+        self.assertEqual(edit_resp.status_code, 404)
+        resume.refresh_from_db()
+        self.assertEqual(resume.resume_title, "User 1 Confidential Resume")
+
+    def test_resume_duplicate_api(self):
+        """Test duplicating resume creates an independent copy."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        orig = Resume.objects.create(
+            user=self.user1,
+            resume_title="Original Resume",
+            selected_template="developer",
+            resume_data={'personal': {'fullName': 'Rohit Sharma'}}
+        )
+        response = self.client.post('/api/resumes/duplicate/', data={'id': orig.id}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get('success'))
+        self.assertIn('Copy', data.get('title'))
+        new_id = data.get('id')
+        self.assertNotEqual(new_id, orig.id)
+        self.assertEqual(Resume.objects.filter(user=self.user1).count(), 2)
+
+    def test_resume_delete_api(self):
+        """Test deleting resume removes it from database."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        res = Resume.objects.create(
+            user=self.user1,
+            resume_title="To Be Deleted",
+            selected_template="classic",
+            resume_data={}
+        )
+        response = self.client.post('/api/resumes/delete/', data={'id': res.id}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Resume.objects.filter(id=res.id).exists())
+
+    def test_import_local_resumes_api(self):
+        """Test importing localStorage resumes into cloud database account."""
+        self.client.login(username='rohit_sharma', password='SecurePassword123!')
+        local_resumes = [
+            {
+                'id': 'res_local_1',
+                'title': 'Local Resume 1',
+                'template': 'classic',
+                'personal': {'fullName': 'Rohit Local 1'}
+            },
+            {
+                'id': 'res_local_2',
+                'title': 'Local Resume 2',
+                'template': 'fresher',
+                'personal': {'fullName': 'Rohit Local 2'}
+            }
+        ]
+        response = self.client.post('/api/resumes/import/', data={
+            'resumes': local_resumes
+        }, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get('success'))
+        self.assertEqual(data.get('count'), 2)
+        self.assertEqual(Resume.objects.filter(user=self.user1).count(), 2)
